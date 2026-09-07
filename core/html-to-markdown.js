@@ -1,16 +1,38 @@
-// HTML -> Markdown converter (capture side).
-// Restores the Markdown structure that the AI platform already rendered as
-// HTML (headings, lists, code blocks, quotes, tables, inline styles), so the
-// saved excerpt keeps its original Markdown form (design: 原文优先).
+// core/html-to-markdown.js — HTML → Markdown 序列化核心（纯逻辑，依赖 DOM 解析由调用方提供）。
+// 内部为 Serializer 注册表：AIDN.registerSerializer({test, serialize}) 可注册
+// 内容类型特例（如 MathSerializer 从 KaTeX annotation 还原 LaTeX，预留位）。
+// 平台特例属于各 source 的预处理职责，通用规则留在本核心。
 (function (global) {
+  const AIDN = (global.AIDN = global.AIDN || {});
+
+  // 自定义序列化器注册表：{ test(node)->bool, serialize(node)->markdown|null }
+  const customSerializers = [];
+  function registerSerializer(s) {
+    customSerializers.push(s);
+  }
+  function tryCustomSerializers(node) {
+    for (const s of customSerializers) {
+      try {
+        if (s.test(node)) {
+          const out = s.serialize(node);
+          if (typeof out === "string") return out;
+        }
+      } catch (_) { /* 单个 serializer 失败不阻断整体 */ }
+    }
+    return null;
+  }
+
   function esc(text) {
-    // escape characters that would be misread as markdown
     return text.replace(/([\\`*_[\]])/g, "\\$1");
   }
 
   function inline(node) {
     let out = "";
     node.childNodes.forEach((child) => {
+      if (child.nodeType === 1) {
+        const custom = tryCustomSerializers(child);
+        if (custom !== null) { out += custom; return; }
+      }
       if (child.nodeType === Node.TEXT_NODE) {
         out += esc(child.textContent.replace(/\s+/g, " "));
         return;
@@ -45,11 +67,7 @@
         case "br":
           out += "  \n";
           break;
-        case "span": case "font": case "mark": case "small": case "sub": case "sup":
-          out += inner;
-          break;
         default:
-          // block element appearing inside inline context: fall back to text
           out += inner || esc(child.textContent || "");
       }
     });
@@ -63,7 +81,6 @@
     listEl.childNodes.forEach((li) => {
       if (!li.tagName || li.tagName.toLowerCase() !== "li") return;
       const marker = ordered ? `${index++}. ` : "- ";
-      // item content may itself contain nested blocks
       const content = blockChildren(li, indent + marker.length);
       const lines = content.split("\n");
       out += " ".repeat(indent) + marker + (lines.shift() || "") + "\n";
@@ -86,11 +103,14 @@
     if (!rows.length) return "";
     const header = rows[0];
     const sep = header.map(() => "---");
-    const lines = [header, sep, ...rows.slice(1)].map((r) => "| " + r.join(" | ") + " |");
-    return lines.join("\n");
+    return [header, sep, ...rows.slice(1)].map((r) => "| " + r.join(" | ") + " |").join("\n");
   }
 
   function block(node, indent) {
+    if (node.nodeType === 1) {
+      const custom = tryCustomSerializers(node);
+      if (custom !== null) return custom;
+    }
     if (node.nodeType === Node.TEXT_NODE) {
       return esc(node.textContent || "").trim();
     }
@@ -107,8 +127,7 @@
         const codeEl = node.querySelector("code");
         let lang = "";
         if (codeEl) {
-          const cls = codeEl.className || "";
-          const m = /language-([\w+-]+)/.exec(cls);
+          const m = /language-([\w+-]+)/.exec(codeEl.className || "");
           if (m) lang = m[1];
         }
         const text = (codeEl || node).textContent.replace(/\n$/, "");
@@ -122,14 +141,13 @@
         return tableToMd(node);
       case "hr":
         return "---";
-      case "code": // standalone inline code
+      case "code":
         return "`" + node.textContent.replace(/`/g, "\\`") + "`";
-      case "li": // stray li outside a list
+      case "li":
         return "- " + inline(node).trim();
       case "script": case "style": case "button": case "svg":
-        return ""; // skip UI chrome (e.g. "copy code" buttons inside pre)
+        return "";
       default:
-        // div / section / article / figure ...: recurse into children
         return blockChildren(node, indent || 0);
     }
   }
@@ -140,16 +158,19 @@
       const b = block(child, indent);
       if (b && b.trim()) blocks.push(b);
     });
-    // join blocks with a blank line, but keep list/table internals tight
     return blocks.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
   }
 
-  function htmlToMarkdown(html) {
-    const tpl = document.createElement("template");
+  // html 字符串 -> markdown。doc 由调用方提供（浏览器里用 document，
+  // 测试/服务端可注入任意 DOM 实现）。
+  function htmlToMarkdown(html, doc) {
+    doc = doc || (typeof document !== "undefined" ? document : null);
+    if (!doc) throw new Error("htmlToMarkdown 需要 DOM document");
+    const tpl = doc.createElement("template");
     tpl.innerHTML = html;
     return blockChildren(tpl.content, 0);
   }
 
-  global.AIDN = global.AIDN || {};
-  global.AIDN.htmlToMarkdown = htmlToMarkdown;
-})(typeof self !== "undefined" ? self : window);
+  AIDN.htmlToMarkdown = htmlToMarkdown;
+  AIDN.registerSerializer = registerSerializer;
+})(typeof self !== "undefined" ? self : globalThis);

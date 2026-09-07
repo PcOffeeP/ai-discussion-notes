@@ -2,43 +2,89 @@
 
 按照《AI Discussion Notes — MVP 初始设计文档 v0.1》实现的 Chrome 扩展（Manifest V3）。
 
-## 功能对照设计文档
+> Save the best things you learn from AI.
 
-- **Markdown 原样保留**：捕获时把选区内的渲染 HTML 还原为 Markdown 存储（标题/列表/代码块/引用/表格/行内样式/链接），Notes 页用 markdown-it + DOMPurify 安全渲染，观感与大模型回复一致；Copy 复制的是 Markdown 原文
+## 架构（RFC-001，v0.2 起）
 
-- **Capture**：在 chatgpt.com 选中文字 → 悬浮「＋ Note」按钮 → 点击即存，「Saved」轻提示自动消失（方案 A）；右键菜单「Save to AI Discussion Notes」作为永久备用入口（方案 B）
-- **Store**：原文 + source / conversationTitle / conversationUrl / createdAt / sourceType，存于 `chrome.storage.local`（Local-first，无账号）
-- **Recall**：点击浏览器工具栏扩展图标打开 Notes 页——倒序列表、全文搜索（content + conversationTitle）、Copy / Open Source / Delete
-- **Empty State**：首次打开展示产品教学 + Open ChatGPT 按钮
-- **Settings**：Capture Button 开关、笔记数量、Export (JSON)、Clear All
-
-## 目录结构
+六边形骨架 + 极简主路径外衣。核心是纯模块（零 `chrome.*` 依赖，Node 可测），
+边界通过端口注入适配器。
 
 ```text
-ai-discussion-notes/
-├── manifest.json
-├── background/service-worker.js   # 存储管理、右键菜单、消息 API
-├── adapters/
-│   ├── capture-adapter.js         # CaptureAdapter 抽象基类
-│   └── chatgpt-adapter.js         # ChatGPT 实现（DOM 降级容错）
-├── content/
-│   ├── content.js                 # 选择监听、悬浮按钮、Saved toast
-│   └── content.css
-├── notes/
-│   ├── notes.html                 # Notes 页面
-│   ├── notes.css                  # Calm / minimal 风格
-│   └── notes.js
-└── shared/note-model.js           # Note 数据结构工厂
+DomSelectionSource(网页选区) ──┐
+LocalHttpSource(桌面Agent, 预留) ─┼→ core.pipeline(归一化→序列化) → NoteRepo(chrome.storage / 未来云)
+SiteProfile(ChatGPT/Kimi…) ──┘        ↑ 纯模块，Node fixture 可测
 ```
+
+```text
+core/                  # 纯模块（业务规则唯一拥有者）
+├── ports.js           # 端口定义文档：NoteRepo / CaptureSource / KV
+├── note.js            # Note schema v2：createNote / migrate(v1→v2) / search
+├── normalize.js       # 块级选区归一化（修复选区丢失 table/ul 外壳）
+├── html-to-markdown.js# HTML→Markdown（内含 Serializer 注册表，math 预留位）
+└── pipeline.js        # createPipeline({repo, serialize?}) → capture(RawCapture)
+
+adapters/              # 薄适配器（薄到无可测）
+├── chrome/kv.js                 # KV 端口：ChromeKV(生产) / MemoryKV(测试)
+├── chrome/storage-note-repo.js  # NoteRepo 生产实现 + 惰性迁移回写
+├── chrome/runtime-client.js     # NoteRepo 远程门面（吃掉消息协议）
+├── chrome/runtime-server.js     # SW 侧消息分发（协议唯一拥有者）
+└── sources/
+    ├── site-profiles.js         # 平台资料 = 纯数据（新平台只加一份数据）
+    └── dom-selection-source.js  # CaptureSource：选区采集 + 归一化
+
+client/aidn.js         # 主路径外衣：save() / all() / search() / remove() + advanced.*
+background/            # 装配层（组合端口与适配器，无业务规则）
+content/               # 纯 UI：选区监听、悬浮按钮、toast
+notes/                 # Notes 页（markdown-it + DOMPurify 渲染）
+test/                  # Node 边界测试：npm test
+docs/RFC-001-capture-core.md  # 本次重构的完整设计依据
+```
+
+## 主路径 API
+
+```js
+// content script（悬浮按钮）
+await aidn.save()            // 当前选区 → Note | null
+// notes page
+await aidn.all()             // Note[]，倒序
+await aidn.search(query)     // Note[]
+await aidn.remove(id)        // boolean
+// 二级：aidn.advanced.saveRaw / registerSiteProfile / registerSerializer /
+//       exportAll / clearAll / settings.get / settings.patch
+```
+
+## Note schema v2
+
+```js
+{ id, schemaVersion: 2,
+  contentMarkdown,   // 主展示（Markdown 原文）
+  contentText,       // 搜索索引
+  contentHtml,       // 原始 HTML 兜底（序列化失败不丢信息）
+  source, sourceType, conversationTitle, conversationUrl, metadata, createdAt }
+```
+
+v1 数据（单 `content` 字段）在 `repo.list()` 时惰性迁移并回写，用户无感知。
 
 ## 安装（开发者模式）
 
-1. 打开 Chrome → `chrome://extensions`
-2. 右上角开启「开发者模式」
-3. 点击「加载已解压的扩展程序」，选择本目录 `ai-discussion-notes/`
-4. 打开 https://chatgpt.com/ 开始对话，选中任意文字点击「＋ Note」
-5. 点击工具栏扩展图标打开 Notes 页面
+1. Chrome → `chrome://extensions` → 开启「开发者模式」
+2. 「加载已解压的扩展程序」→ 选择本目录
+3. 打开 https://chatgpt.com/ ，选中文字点「＋ Note」
+4. 点击工具栏扩展图标打开 Notes 页
 
-## 扩展新平台（第二阶段）
+## 测试
 
-新增平台只需：实现一个继承 `CaptureAdapter` 的 Adapter 并 push 到 `AIDN.adapters`，在 manifest 的 content_scripts matches 中加入对应域名。Notes Core 无需改动。
+```bash
+npm test   # node --test：note schema / 迁移 / 搜索 / 管道编排 / repo 契约
+```
+
+DOM 相关（块归一化、html-to-markdown）目前走浏览器手动验证清单，
+引入 jsdom 后自动化。
+
+## 扩展新平台 / 新来源
+
+- 新网页平台：`site-profiles.js` 加一份纯数据 + manifest 加 matches，核心零改动
+- 新内容类型（如 KaTeX 公式）：`aidn.advanced.registerSerializer({test, serialize})`
+- 桌面 Agent：实现 `LocalHttpSource`（CaptureSource 端口），桌面进程
+  `POST 127.0.0.1:PORT/capture` 即进入同一条管道
+- 云同步：实现 NoteRepo 接口的 CloudSyncNoteRepo，SW 装配处一行替换

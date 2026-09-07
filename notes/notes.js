@@ -1,5 +1,9 @@
-// Notes page logic: list, search, note actions, settings.
+// notes/notes.js — Notes 页：列表 / 搜索 / 卡片操作 / 设置。
+// 数据访问只有主路径四行：aidn.all() / aidn.search() / aidn.remove() / advanced.*
 (function () {
+  const AIDN = window.AIDN;
+  const aidn = AIDN.createClient({ repo: AIDN.createRuntimeNoteClient() });
+
   const listEl = document.getElementById("notes-list");
   const emptyEl = document.getElementById("empty-state");
   const noResultsEl = document.getElementById("no-results");
@@ -9,12 +13,10 @@
 
   let allNotes = [];
   let query = "";
-  const rawViewIds = new Set(); // note ids currently showing Markdown source
+  const rawViewIds = new Set(); // 处于 Markdown 源码视图的卡片
 
-  // Markdown renderer (vendored markdown-it + DOMPurify for safe HTML).
-  const md = window.markdownit
-    ? window.markdownit({ linkify: true, breaks: false })
-    : null;
+  // Markdown 渲染（vendored markdown-it + DOMPurify）
+  const md = window.markdownit ? window.markdownit({ linkify: true }) : null;
   function renderMarkdown(source) {
     const text = source || "";
     if (!md) {
@@ -22,12 +24,10 @@
       p.textContent = text;
       return p;
     }
-    const rawHtml = md.render(text);
-    const clean = window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
+    const clean = window.DOMPurify ? DOMPurify.sanitize(md.render(text)) : md.render(text);
     const wrapper = document.createElement("div");
     wrapper.className = "note-md";
     wrapper.innerHTML = clean;
-    // open links in a new tab, never navigate the notes page
     wrapper.querySelectorAll("a[href]").forEach((a) => {
       a.target = "_blank";
       a.rel = "noopener";
@@ -35,28 +35,13 @@
     return wrapper;
   }
 
-  // ---- messaging helper ----
-  function send(msg) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(msg, (resp) => {
-        resolve(chrome.runtime.lastError ? { ok: false } : resp);
-      });
-    });
-  }
-
-  // ---- rendering ----
   function formatDate(iso) {
     const d = new Date(iso);
     if (isNaN(d)) return "";
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
-      " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  }
-
-  function noteMatches(note, q) {
-    const needle = q.toLowerCase();
     return (
-      (note.content || "").toLowerCase().includes(needle) ||
-      (note.conversationTitle || "").toLowerCase().includes(needle)
+      d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+      " " +
+      d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
     );
   }
 
@@ -64,26 +49,28 @@
     if (rawViewIds.has(note.id)) {
       const pre = document.createElement("pre");
       pre.className = "note-content note-raw";
-      pre.textContent = note.content || "";
+      pre.textContent = note.contentMarkdown || note.contentText || "";
       return pre;
     }
-    const el = renderMarkdown(note.content);
+    const el = renderMarkdown(note.contentMarkdown || note.contentText);
     el.classList.add("note-content");
     return el;
   }
 
-  function render() {
-    const visible = allNotes
-      .slice()
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)) // newest first
-      .filter((n) => !query || noteMatches(n, query));
+  async function refresh() {
+    allNotes = query ? await aidn.search(query) : await aidn.all();
+    render();
+  }
 
+  function render() {
     listEl.innerHTML = "";
     emptyEl.classList.toggle("hidden", allNotes.length !== 0);
-    noResultsEl.classList.toggle("hidden", !(allNotes.length > 0 && visible.length === 0));
-    noteCountEl.textContent = String(allNotes.length);
+    noResultsEl.classList.toggle(
+      "hidden",
+      !(query && allNotes.length === 0)
+    );
 
-    for (const note of visible) {
+    for (const note of allNotes) {
       const li = document.createElement("li");
       li.className = "note-card";
 
@@ -100,15 +87,12 @@
       actions.className = "note-actions";
 
       const rawBtn = document.createElement("button");
-      const showRaw = rawViewIds.has(note.id);
-      rawBtn.textContent = showRaw ? "Preview" : "Markdown";
+      rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
       rawBtn.title = "Toggle Markdown source / rendered view";
       rawBtn.addEventListener("click", () => {
         if (rawViewIds.has(note.id)) rawViewIds.delete(note.id);
         else rawViewIds.add(note.id);
-        // swap only this card's content element, keep the rest of the DOM
-        const next = buildContentEl(note);
-        li.replaceChild(next, li.querySelector(".note-content"));
+        li.replaceChild(buildContentEl(note), li.querySelector(".note-content"));
         rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
       });
 
@@ -116,7 +100,7 @@
       copyBtn.textContent = "Copy";
       copyBtn.addEventListener("click", async () => {
         try {
-          await navigator.clipboard.writeText(note.content);
+          await navigator.clipboard.writeText(note.contentMarkdown || note.contentText || "");
           copyBtn.textContent = "Copied";
           setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
         } catch (_) { /* clipboard unavailable */ }
@@ -132,9 +116,9 @@
       const delBtn = document.createElement("button");
       delBtn.textContent = "Delete";
       delBtn.addEventListener("click", async () => {
-        await send({ type: "AIDN_DELETE_NOTE", id: note.id });
-        allNotes = allNotes.filter((n) => n.id !== note.id);
-        render();
+        await aidn.remove(note.id);
+        rawViewIds.delete(note.id);
+        await refresh();
       });
 
       actions.append(rawBtn, copyBtn, openBtn, delBtn);
@@ -147,35 +131,28 @@
   let searchTimer = null;
   searchEl.addEventListener("input", () => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
+    searchTimer = setTimeout(async () => {
       query = searchEl.value.trim();
-      render();
+      await refresh();
     }, 120);
   });
 
   // ---- settings ----
   const overlay = document.getElementById("settings-overlay");
   const panel = document.getElementById("settings-panel");
-
-  function openSettings() {
-    overlay.classList.remove("hidden");
-    panel.classList.remove("hidden");
-  }
-  function closeSettings() {
-    overlay.classList.add("hidden");
-    panel.classList.add("hidden");
-  }
-
+  const openSettings = () => { overlay.classList.remove("hidden"); panel.classList.remove("hidden"); };
+  const closeSettings = () => { overlay.classList.add("hidden"); panel.classList.add("hidden"); };
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("settings-close").addEventListener("click", closeSettings);
   overlay.addEventListener("click", closeSettings);
 
   captureToggle.addEventListener("change", async () => {
-    await send({ type: "AIDN_SET_SETTINGS", settings: { captureButtonEnabled: captureToggle.checked } });
+    await aidn.advanced.settings?.patch({ captureButtonEnabled: captureToggle.checked });
   });
 
-  document.getElementById("export-btn").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(allNotes, null, 2)], { type: "application/json" });
+  document.getElementById("export-btn").addEventListener("click", async () => {
+    const notes = await aidn.advanced.exportAll();
+    const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -186,21 +163,21 @@
 
   document.getElementById("clear-btn").addEventListener("click", async () => {
     if (!confirm("Delete all saved notes? This cannot be undone.")) return;
-    await send({ type: "AIDN_CLEAR_NOTES" });
-    allNotes = [];
-    render();
+    await aidn.advanced.clearAll();
+    await refresh();
+    updateCount();
   });
+
+  async function updateCount() {
+    const notes = await aidn.advanced.exportAll();
+    noteCountEl.textContent = String(notes.length);
+  }
 
   // ---- init ----
   (async function init() {
-    const [notesResp, settingsResp] = await Promise.all([
-      send({ type: "AIDN_LIST_NOTES" }),
-      send({ type: "AIDN_GET_SETTINGS" }),
-    ]);
-    allNotes = notesResp.ok ? notesResp.notes || [] : [];
-    captureToggle.checked = settingsResp.ok
-      ? settingsResp.settings.captureButtonEnabled !== false
-      : true;
-    render();
+    const settings = await aidn.advanced.settings?.get();
+    captureToggle.checked = settings ? settings.captureButtonEnabled !== false : true;
+    await refresh();
+    updateCount();
   })();
 })();
