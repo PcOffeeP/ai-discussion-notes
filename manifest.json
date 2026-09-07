@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AI Discussion Notes",
+  "version": "0.1.0",
+  "description": "Save the best things you learn from AI.",
+  "permissions": ["storage", "contextMenus"],
+  "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Open AI Discussion Notes"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": ["shared/html-to-markdown.js", "adapters/capture-adapter.js", "adapters/chatgpt-adapter.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

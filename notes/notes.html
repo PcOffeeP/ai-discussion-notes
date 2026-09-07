@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Discussion Notes</title>
+  <link rel="stylesheet" href="notes.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">AI Discussion Notes</h1>
+    <div class="topbar-actions">
+      <input id="search" type="search" placeholder="Search notes..." autocomplete="off" />
+      <button id="settings-btn" class="ghost-btn" title="Settings">Settings</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Empty state (also serves as product onboarding) -->
+    <section id="empty-state" class="empty hidden">
+      <h2>Your best AI insights, saved.</h2>
+      <p>Select useful text in ChatGPT and save it here.</p>
+      <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
+    </section>
+
+    <ul id="notes-list" class="notes-list"></ul>
+    <p id="no-results" class="no-results hidden">No notes match your search.</p>
+  </main>
+
+  <!-- Settings drawer -->
+  <div id="settings-overlay" class="overlay hidden"></div>
+  <aside id="settings-panel" class="settings hidden" aria-label="Settings">
+    <div class="settings-head">
+      <h2>Settings</h2>
+      <button id="settings-close" class="ghost-btn">Close</button>
+    </div>
+
+    <section class="settings-section">
+      <h3>Capture Button</h3>
+      <label class="toggle-row">
+        <input type="checkbox" id="capture-toggle" />
+        <span>Show the "＋ Note" button when text is selected</span>
+      </label>
+    </section>
+
+    <section class="settings-section">
+      <h3>Data</h3>
+      <p><span id="note-count">0</span> notes saved locally</p>
+      <div class="settings-actions">
+        <button id="export-btn" class="ghost-btn">Export Notes (JSON)</button>
+        <button id="clear-btn" class="danger-btn">Clear All Notes</button>
+      </div>
+    </section>
+  </aside>
+
+  <script src="../vendor/markdown-it.min.js"></script>
+  <script src="../vendor/dompurify.min.js"></script>
+  <script src="notes.js"></script>
+</body>
+</html>
