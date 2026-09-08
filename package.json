@@ -5,5 +5,8 @@
   "description": "Save the best things you learn from AI. (Chrome MV3 extension)",
   "scripts": {
     "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
   }
 }

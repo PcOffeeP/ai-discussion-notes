@@ -99,8 +99,25 @@
   });
   window.addEventListener("scroll", hideButton, { passive: true });
 
-  // 来自 service worker 的轻量反馈（右键菜单保存后）
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === "AIDN_TOAST") showToast(msg.text || "Saved");
+  // 来自 service worker 的消息
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type === "AIDN_TOAST") {
+      showToast(msg.text || "Saved");
+      return false;
+    }
+    // 右键菜单入口：在页面内走完整管道（保留 HTML → 列表/表格不丢失）
+    if (msg?.type === "AIDN_CAPTURE_CONTEXT_MENU") {
+      (async () => {
+        try {
+          const note = await aidn.save();
+          if (note) showToast("Saved");
+          sendResponse({ ok: !!note });
+        } catch (_) {
+          sendResponse({ ok: false });
+        }
+      })();
+      return true; // async response
+    }
+    return false;
   });
 })();

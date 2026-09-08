@@ -26,9 +26,9 @@
     return text.replace(/([\\`*_[\]])/g, "\\$1");
   }
 
-  function inline(node) {
+  function inlineNodes(children) {
     let out = "";
-    node.childNodes.forEach((child) => {
+    children.forEach((child) => {
       if (child.nodeType === 1) {
         const custom = tryCustomSerializers(child);
         if (custom !== null) { out += custom; return; }
@@ -74,6 +74,10 @@
     return out;
   }
 
+  function inline(node) {
+    return inlineNodes([...node.childNodes]);
+  }
+
   function listToMd(listEl, indent) {
     const ordered = listEl.tagName.toLowerCase() === "ol";
     let index = parseInt(listEl.getAttribute("start") || "1", 10);
@@ -105,6 +109,12 @@
     const sep = header.map(() => "---");
     return [header, sep, ...rows.slice(1)].map((r) => "| " + r.join(" | ") + " |").join("\n");
   }
+
+  // 行内元素集合：块级上下文遇到它们时按文本处理，不拆成独立块
+  const INLINE_TAGS = new Set([
+    "strong", "b", "em", "i", "del", "s", "code", "a", "img", "br",
+    "span", "font", "mark", "small", "sub", "sup", "u", "abbr", "kbd", "wbr",
+  ]);
 
   function block(node, indent) {
     if (node.nodeType === 1) {
@@ -148,16 +158,41 @@
       case "script": case "style": case "button": case "svg":
         return "";
       default:
+        // 行内元素出现在块级位置时按文本处理（不拆块、保留 ** 等标记）
+        if (INLINE_TAGS.has(tag)) return inline(node).trim();
         return blockChildren(node, indent || 0);
     }
   }
 
   function blockChildren(node, indent) {
+    // 把连续的行内节点（文本、strong、code…）聚成一个段落，
+    // 遇到块级元素再切分——否则 <li><strong>A</strong>：B</li>
+    // 会被拆成两个块且丢失加粗（2026-09-09 Kimi 列表事故的深层原因之一）。
     const blocks = [];
+    let run = [];
+    const flush = () => {
+      if (!run.length) return;
+      const text = inlineNodes(run).trim();
+      if (text) blocks.push(text);
+      run = [];
+    };
     node.childNodes.forEach((child) => {
+      const isInline =
+        child.nodeType === Node.TEXT_NODE ||
+        (child.nodeType === Node.ELEMENT_NODE &&
+          INLINE_TAGS.has(child.tagName.toLowerCase()) &&
+          tryCustomSerializers(child) === null);
+      if (isInline) {
+        run.push(child);
+        return;
+      }
       const b = block(child, indent);
-      if (b && b.trim()) blocks.push(b);
+      if (b && b.trim()) {
+        flush();
+        blocks.push(b);
+      }
     });
+    flush();
     return blocks.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
   }
 

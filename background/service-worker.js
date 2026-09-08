@@ -38,22 +38,29 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== "aidn-save-selection" || !tab?.id) return;
-  // 平台信息从 SiteProfile 派生，不再硬编码
-  const hostname = new URL(info.pageUrl || tab.url || "https://unknown").hostname;
-  const profile = AIDN.matchProfile(hostname);
-  const title = (tab.title || "")
-    .replace(/\s*[-–—]\s*(ChatGPT|Kimi)\s*$/i, "")
-    .trim();
-  await aidn.advanced.saveRaw({
-    text: info.selectionText || "",
-    source: profile ? profile.platform : hostname,
-    sourceType: profile ? profile.sourceType : "web",
-    conversationTitle: title,
-    conversationUrl: info.pageUrl || tab.url || "",
-  });
-  chrome.tabs.sendMessage(tab.id, { type: "AIDN_TOAST", text: "Saved" }, () => {
-    void chrome.runtime.lastError; // 页面可能未加载 content script，忽略
-  });
+  // 优先让 content script 走完整管道（保留 HTML 结构 → Markdown 列表/表格不丢失）。
+  // content script 不可达（页面未加载脚本等）时降级为纯文本直存。
+  const fallbackSave = async () => {
+    const hostname = new URL(info.pageUrl || tab.url || "https://unknown").hostname;
+    const profile = AIDN.matchProfile(hostname);
+    const title = (tab.title || "")
+      .replace(/\s*[-–—]\s*(ChatGPT|Kimi)\s*$/i, "")
+      .trim();
+    await aidn.advanced.saveRaw({
+      text: info.selectionText || "",
+      source: profile ? profile.platform : hostname,
+      sourceType: profile ? profile.sourceType : "web",
+      conversationTitle: title,
+      conversationUrl: info.pageUrl || tab.url || "",
+    });
+  };
+
+  try {
+    const resp = await chrome.tabs.sendMessage(tab.id, { type: "AIDN_CAPTURE_CONTEXT_MENU" });
+    if (!resp?.ok) await fallbackSave();
+  } catch (_) {
+    await fallbackSave();
+  }
 });
 
 // ---- 工具栏图标打开 Notes 页 ----

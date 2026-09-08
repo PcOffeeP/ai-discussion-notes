@@ -1,0 +1,12 @@
+<!-- ChatGPT 表格部分选中场景 fixture：用户只选中表格中间的几个单元格时，
+     normalize 必须向上补全 <table> 外壳，否则序列化退化为纯文本。 -->
+<div class="markdown">
+  <p>Evaluator 应该怎么选</p>
+  <table>
+    <thead><tr><th>Failure 是否能客观判断</th><th>推荐</th></tr></thead>
+    <tbody>
+      <tr><td>完全确定</td><td>Code-based Eval</td></tr>
+      <tr><td>需要语义判断</td><td>LLM-as-a-Judge</td></tr>
+    </tbody>
+  </table>
+</div>
