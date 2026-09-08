@@ -73,17 +73,15 @@ body {
 }
 #search:focus { border-color: #b8b4ac; }
 
-/* ---------- 三区域布局 ---------- */
+/* ---------- 三区域布局：sidebar 贴最左，主列在剩余空间居中 ---------- */
 .layout {
   display: flex;
   align-items: flex-start;
-  max-width: calc(var(--sidebar-w) + var(--column-w) + 96px);
-  margin: 0 auto;
   padding: 28px 24px 80px;
   gap: 32px;
 }
 
-/* Sidebar：过滤器 */
+/* Sidebar：贴窗口左缘 */
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
@@ -125,11 +123,12 @@ body {
 }
 .side-count { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
 
-/* Main column：左对齐 */
+/* Main column：在 sidebar 右侧的剩余空间里居中 */
 .main {
   width: var(--column-w);
   max-width: 100%;
   min-width: 0;
+  margin: 0 auto;
 }
 
 /* ---------- 对话分组 ---------- */
