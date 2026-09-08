@@ -15,17 +15,30 @@
     </div>
   </header>
 
-  <main class="main">
-    <!-- Empty state (also serves as product onboarding) -->
-    <section id="empty-state" class="empty hidden">
-      <h2>Your best AI insights, saved.</h2>
-      <p>Select useful text in ChatGPT and save it here.</p>
-      <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
-    </section>
+  <div class="layout">
+    <!-- Sidebar：过滤器，不是管理器（消费已有数据，不引入新实体） -->
+    <nav class="sidebar" id="sidebar">
+      <button class="side-item" id="side-all" data-filter="all">
+        <span>All Notes</span><span class="side-count" id="count-all">0</span>
+      </button>
+      <div class="side-section">Sources</div>
+      <div id="side-sources"></div>
+      <div class="side-section">Conversations</div>
+      <div id="side-conversations"></div>
+    </nav>
 
-    <ul id="notes-list" class="notes-list"></ul>
-    <p id="no-results" class="no-results hidden">No notes match your search.</p>
-  </main>
+    <main class="main">
+      <!-- Empty state（兼产品教学） -->
+      <section id="empty-state" class="empty hidden">
+        <h2>Your best AI insights, saved.</h2>
+        <p>Select useful text in ChatGPT and save it here.</p>
+        <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
+      </section>
+
+      <div id="groups" class="groups"></div>
+      <p id="no-results" class="no-results hidden">No notes match.</p>
+    </main>
+  </div>
 
   <!-- Settings drawer -->
   <div id="settings-overlay" class="overlay hidden"></div>
@@ -54,6 +67,7 @@
   </aside>
 
   <script src="../core/note.js"></script>
+  <script src="../core/group.js"></script>
   <script src="../core/pipeline.js"></script>
   <script src="../adapters/chrome/runtime-client.js"></script>
   <script src="../client/aidn.js"></script>

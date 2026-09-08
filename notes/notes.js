@@ -1,21 +1,36 @@
-// notes/notes.js — Notes 页：列表 / 搜索 / 卡片操作 / 设置。
-// 数据访问只有主路径四行：aidn.all() / aidn.search() / aidn.remove() / advanced.*
+// notes/notes.js — Notes 页（RFC-002）：对话分组 / sidebar 过滤 / 卡片折叠 / 相对时间。
+// 数据访问只有主路径：aidn.all() / aidn.search() / aidn.remove() / advanced.*
 (function () {
   const AIDN = window.AIDN;
   const aidn = AIDN.createClient({ repo: AIDN.createRuntimeNoteClient() });
 
-  const listEl = document.getElementById("notes-list");
+  const groupsEl = document.getElementById("groups");
   const emptyEl = document.getElementById("empty-state");
   const noResultsEl = document.getElementById("no-results");
   const searchEl = document.getElementById("search");
   const noteCountEl = document.getElementById("note-count");
   const captureToggle = document.getElementById("capture-toggle");
+  const sideAll = document.getElementById("side-all");
+  const countAll = document.getElementById("count-all");
+  const sideSources = document.getElementById("side-sources");
+  const sideConversations = document.getElementById("side-conversations");
 
-  let allNotes = [];
+  // ---- 状态 ----
+  let allNotes = [];           // 全量（搜索前的基底）
   let query = "";
-  const rawViewIds = new Set(); // 处于 Markdown 源码视图的卡片
+  let filter = { type: "all", value: null }; // sidebar 过滤：all | source | conversation
+  const rawViewIds = new Set();
+  const COLLAPSED_KEY = "aidn-collapsed-groups";
+  const collapsedGroups = new Set(readJson(localStorage.getItem(COLLAPSED_KEY), []));
 
-  // Markdown 渲染（vendored markdown-it + DOMPurify）
+  function readJson(s, fallback) {
+    try { return JSON.parse(s) || fallback; } catch (_) { return fallback; }
+  }
+  function persistCollapsed() {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsedGroups]));
+  }
+
+  // ---- Markdown 渲染 ----
   const md = window.markdownit ? window.markdownit({ linkify: true }) : null;
   function renderMarkdown(source) {
     const text = source || "";
@@ -35,16 +50,103 @@
     return wrapper;
   }
 
-  function formatDate(iso) {
+  // ---- 相对时间（重读场景："多久前"比"几月几号"更有意义） ----
+  function relativeTime(iso) {
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return "";
+    const diff = Date.now() - t;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "刚刚";
+    if (min < 60) return `${min} 分钟前`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} 小时前`;
+    const day = Math.floor(hr / 24);
+    if (day === 1) return "昨天";
+    if (day < 30) return `${day} 天前`;
+    return new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+  function absoluteTime(iso) {
     const d = new Date(iso);
-    if (isNaN(d)) return "";
-    return (
-      d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
-      " " +
-      d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-    );
+    return isNaN(d) ? "" : d.toLocaleString();
   }
 
+  // ---- 过滤与分组派生 ----
+  function applyFilter(notes) {
+    let out = notes;
+    if (filter.type === "source") out = out.filter((n) => (n.source || "unknown") === filter.value);
+    if (filter.type === "conversation") out = out.filter((n) => AIDN.group.groupKeyOf(n) === filter.value);
+    if (query) out = AIDN.note.search(out, query);
+    return out;
+  }
+
+  // ---- Sidebar 渲染（计数始终基于全量 + 当前搜索词） ----
+  function renderSidebar() {
+    const base = query ? AIDN.note.search(allNotes, query) : allNotes;
+    countAll.textContent = String(base.length);
+
+    sideSources.innerHTML = "";
+    for (const { source, count } of AIDN.group.countBySource(base)) {
+      sideSources.appendChild(sideItem(
+        source, count,
+        filter.type === "source" && filter.value === source,
+        () => setFilter({ type: "source", value: source }, `source=${encodeURIComponent(source)}`)
+      ));
+    }
+
+    sideConversations.innerHTML = "";
+    for (const g of AIDN.group.groupByConversation(base)) {
+      const label = g.title || "未命名对话";
+      sideConversations.appendChild(sideItem(
+        `${label}`, `${g.source} · ${g.count}`,
+        filter.type === "conversation" && filter.value === g.key,
+        () => setFilter({ type: "conversation", value: g.key }, `conv=${encodeURIComponent(g.key)}`)
+      ));
+    }
+  }
+
+  function sideItem(label, count, active, onClick) {
+    const btn = document.createElement("button");
+    btn.className = "side-item" + (active ? " active" : "");
+    const l = document.createElement("span");
+    l.className = "side-label";
+    l.textContent = label;
+    l.title = label;
+    const c = document.createElement("span");
+    c.className = "side-count";
+    c.textContent = String(count);
+    btn.append(l, c);
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
+  function setFilter(next, hash) {
+    // 再次点击已激活项 = 取消过滤
+    if (filter.type === next.type && filter.value === next.value) {
+      filter = { type: "all", value: null };
+      location.hash = "";
+    } else {
+      filter = next;
+      location.hash = hash;
+    }
+    syncSidebarActive();
+    renderMain();
+  }
+
+  function syncSidebarActive() {
+    sideAll.classList.toggle("active", filter.type === "all");
+    renderSidebar();
+  }
+
+  sideAll.addEventListener("click", () => setFilter({ type: "all", value: null }, ""));
+
+  function restoreFilterFromHash() {
+    const h = location.hash.slice(1);
+    const params = new URLSearchParams(h);
+    if (params.get("source")) filter = { type: "source", value: params.get("source") };
+    else if (params.get("conv")) filter = { type: "conversation", value: params.get("conv") };
+  }
+
+  // ---- 卡片 ----
   function buildContentEl(note) {
     if (rawViewIds.has(note.id)) {
       const pre = document.createElement("pre");
@@ -57,87 +159,159 @@
     return el;
   }
 
-  async function refresh() {
-    allNotes = query ? await aidn.search(query) : await aidn.all();
-    render();
+  function buildCard(note) {
+    const li = document.createElement("article");
+    li.className = "note-card";
+
+    const content = buildContentEl(note);
+    li.appendChild(content);
+
+    // 长笔记折叠：渲染后测量，超过阈值加截断态
+    requestAnimationFrame(() => {
+      if (content.scrollHeight > 300 && !rawViewIds.has(note.id)) {
+        li.classList.add("truncated");
+      }
+    });
+    const expandBtn = document.createElement("button");
+    expandBtn.className = "note-expand";
+    expandBtn.textContent = "展开全文";
+    expandBtn.addEventListener("click", () => {
+      const truncated = li.classList.toggle("truncated");
+      expandBtn.textContent = truncated ? "展开全文" : "收起";
+    });
+    li.appendChild(expandBtn);
+
+    const meta = document.createElement("div");
+    meta.className = "note-meta";
+    const timeEl = document.createElement("time");
+    timeEl.textContent = relativeTime(note.createdAt);
+    timeEl.title = absoluteTime(note.createdAt);
+    meta.append(document.createTextNode(note.source || "unknown"), timeEl);
+
+    const actions = document.createElement("div");
+    actions.className = "note-actions";
+
+    const rawBtn = document.createElement("button");
+    rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
+    rawBtn.addEventListener("click", () => {
+      if (rawViewIds.has(note.id)) rawViewIds.delete(note.id);
+      else rawViewIds.add(note.id);
+      li.classList.remove("truncated");
+      li.replaceChild(buildContentEl(note), li.querySelector(".note-content"));
+      rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
+    });
+
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = "Copy";
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(note.contentMarkdown || note.contentText || "");
+        copyBtn.textContent = "Copied";
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+      } catch (_) { /* clipboard unavailable */ }
+    });
+
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "Open Source";
+    openBtn.disabled = !note.conversationUrl;
+    openBtn.addEventListener("click", () => {
+      if (note.conversationUrl) window.open(note.conversationUrl, "_blank", "noopener");
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", async () => {
+      await aidn.remove(note.id);
+      rawViewIds.delete(note.id);
+      await refresh();
+    });
+
+    actions.append(rawBtn, copyBtn, openBtn, delBtn);
+    li.append(actions, meta);
+    return li;
   }
 
-  function render() {
-    listEl.innerHTML = "";
+  // ---- 主列渲染（按对话分组） ----
+  function renderMain() {
+    const visible = applyFilter(allNotes);
+    groupsEl.innerHTML = "";
+
     emptyEl.classList.toggle("hidden", allNotes.length !== 0);
-    noResultsEl.classList.toggle(
-      "hidden",
-      !(query && allNotes.length === 0)
-    );
+    noResultsEl.classList.toggle("hidden", !(allNotes.length > 0 && visible.length === 0));
 
-    for (const note of allNotes) {
-      const li = document.createElement("li");
-      li.className = "note-card";
+    for (const g of AIDN.group.groupByConversation(visible)) {
+      const section = document.createElement("section");
+      section.className = "group" + (collapsedGroups.has(g.key) ? " collapsed" : "");
 
-      const content = buildContentEl(note);
+      const header = document.createElement("div");
+      header.className = "group-header";
 
-      const meta = document.createElement("div");
-      meta.className = "note-meta";
-      const parts = [note.source || "unknown"];
-      if (note.conversationTitle) parts.push(note.conversationTitle);
-      parts.push(formatDate(note.createdAt));
-      meta.textContent = parts.join(" · ");
+      const caret = document.createElement("span");
+      caret.className = "group-caret";
+      caret.textContent = "▾";
 
-      const actions = document.createElement("div");
-      actions.className = "note-actions";
+      const title = document.createElement("span");
+      title.className = "group-title";
+      title.textContent = g.title || "未命名对话";
+      title.title = title.textContent;
 
-      const rawBtn = document.createElement("button");
-      rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
-      rawBtn.title = "Toggle Markdown source / rendered view";
-      rawBtn.addEventListener("click", () => {
-        if (rawViewIds.has(note.id)) rawViewIds.delete(note.id);
-        else rawViewIds.add(note.id);
-        li.replaceChild(buildContentEl(note), li.querySelector(".note-content"));
-        rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
-      });
-
-      const copyBtn = document.createElement("button");
-      copyBtn.textContent = "Copy";
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(note.contentMarkdown || note.contentText || "");
-          copyBtn.textContent = "Copied";
-          setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
-        } catch (_) { /* clipboard unavailable */ }
-      });
+      const meta = document.createElement("span");
+      meta.className = "group-meta";
+      meta.textContent = `${g.source} · ${g.count} 条 · ${relativeTime(g.latestAt)}`;
 
       const openBtn = document.createElement("button");
+      openBtn.className = "group-open";
       openBtn.textContent = "Open Source";
-      openBtn.disabled = !note.conversationUrl;
-      openBtn.addEventListener("click", () => {
-        if (note.conversationUrl) window.open(note.conversationUrl, "_blank", "noopener");
+      openBtn.disabled = !g.conversationUrl;
+      openBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (g.conversationUrl) window.open(g.conversationUrl, "_blank", "noopener");
       });
 
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "Delete";
-      delBtn.addEventListener("click", async () => {
-        await aidn.remove(note.id);
-        rawViewIds.delete(note.id);
-        await refresh();
+      header.append(caret, title, meta, openBtn);
+      header.addEventListener("click", () => {
+        if (collapsedGroups.has(g.key)) collapsedGroups.delete(g.key);
+        else collapsedGroups.add(g.key);
+        persistCollapsed();
+        section.classList.toggle("collapsed");
       });
 
-      actions.append(rawBtn, copyBtn, openBtn, delBtn);
-      li.append(actions, content, meta);
-      listEl.appendChild(li);
+      const body = document.createElement("div");
+      body.className = "group-body";
+      for (const note of g.notes) body.appendChild(buildCard(note));
+
+      section.append(header, body);
+      groupsEl.appendChild(section);
     }
   }
 
-  // ---- search ----
+  async function refresh() {
+    allNotes = await aidn.all(); // 已按 createdAt 倒序
+    noteCountEl.textContent = String(allNotes.length);
+    renderSidebar();
+    syncSidebarActive();
+    renderMain();
+  }
+
+  // ---- 搜索（关键词检索，防抖） ----
   let searchTimer = null;
   searchEl.addEventListener("input", () => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(async () => {
+    searchTimer = setTimeout(() => {
       query = searchEl.value.trim();
-      await refresh();
+      renderSidebar();
+      renderMain();
     }, 120);
   });
 
-  // ---- settings ----
+  // ---- 键盘：Esc 清空搜索 / 关闭 Settings ----
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!panel.classList.contains("hidden")) { closeSettings(); return; }
+    if (searchEl.value) { searchEl.value = ""; query = ""; renderSidebar(); renderMain(); }
+  });
+
+  // ---- Settings ----
   const overlay = document.getElementById("settings-overlay");
   const panel = document.getElementById("settings-panel");
   const openSettings = () => { overlay.classList.remove("hidden"); panel.classList.remove("hidden"); };
@@ -165,19 +339,13 @@
     if (!confirm("Delete all saved notes? This cannot be undone.")) return;
     await aidn.advanced.clearAll();
     await refresh();
-    updateCount();
   });
-
-  async function updateCount() {
-    const notes = await aidn.advanced.exportAll();
-    noteCountEl.textContent = String(notes.length);
-  }
 
   // ---- init ----
   (async function init() {
+    restoreFilterFromHash();
     const settings = await aidn.advanced.settings?.get();
     captureToggle.checked = settings ? settings.captureButtonEnabled !== false : true;
     await refresh();
-    updateCount();
   })();
 })();
