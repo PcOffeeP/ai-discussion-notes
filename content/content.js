@@ -13,7 +13,7 @@
 
   aidn.advanced.settings?.get().then((s) => {
     captureEnabled = s.captureButtonEnabled !== false;
-  });
+  }).catch(() => { /* 扩展上下文失效（扩展刚更新）时静默忽略 */ });
 
   // ---- floating button ----
   function ensureButton() {
@@ -42,7 +42,7 @@
   }
 
   // ---- toast ----
-  function showToast(text) {
+  function showToast(text, duration = 1500) {
     if (!toastEl) {
       toastEl = document.createElement("div");
       toastEl.className = "aidn-toast";
@@ -51,7 +51,23 @@
     toastEl.textContent = text;
     toastEl.classList.add("aidn-visible");
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => toastEl.classList.remove("aidn-visible"), 1500);
+    showToast._t = setTimeout(() => toastEl.classList.remove("aidn-visible"), duration);
+  }
+
+  // ---- 扩展上下文失效检测 ----
+  // 扩展更新/刷新后，已打开页面里的 content script 上下文即失效
+  // （chrome.runtime.id 变为 undefined，消息通道断开）。此时保存必然失败，
+  // 必须明确引导用户刷新页面，而不是报一个含糊的 "Save failed"。
+  function contextInvalidated() {
+    try {
+      return !chrome.runtime?.id;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  function isInvalidationError(err) {
+    return contextInvalidated() || /Extension context invalidated/i.test(String(err?.message || err));
   }
 
   // ---- save: 主路径一行 ----
@@ -64,8 +80,13 @@
       showToast("Saved");
       hideButton();
       window.getSelection()?.removeAllRanges();
-    } catch (_) {
-      showToast("Save failed");
+    } catch (err) {
+      if (isInvalidationError(err)) {
+        showToast("扩展已更新，请刷新本页后再收藏", 3000);
+      } else {
+        console.error("[AIDN] save failed:", err);
+        showToast("Save failed");
+      }
     }
   }
 
