@@ -64,6 +64,36 @@ test("normalize：选区完整覆盖列表时不重复拼接", () => {
   });
 });
 
+test("normalize：跨块选区（段落外 → 列表中间）不产生重复内容", () => {
+  // 回归：2026-09-09 实测——旧算法把残片与完整 ul 拼接，列表内容出现两次
+  withDom(fixture("kimi-list.html"), CORE, ({ document, AIDN }) => {
+    const p = document.querySelector("p").firstChild;
+    const secondLi = document.querySelectorAll("li")[1];
+    const range = document.createRange();
+    range.setStart(p, 2);
+    range.setEnd(secondLi.firstChild.firstChild, 3); // 停在第二个 li 的 strong 文本中间
+
+    const html = AIDN.normalize.normalizeRange(range, document);
+    const md = AIDN.htmlToMarkdown(html, document);
+    const listLines = md.split("\n").filter((l) => l.startsWith("- "));
+    assert.equal(listLines.length, 3, `列表项不应重复：\n${md}`);
+    assert.equal(md.split("空间 vs 暴露").length - 1, 1, "内容只应出现一次");
+    assert.ok(md.startsWith("设计 sidebar 时有三组核心权衡"));
+  });
+});
+
+test("normalize：单段落内部分选中按块取整为整段", () => {
+  withDom(fixture("kimi-list.html"), CORE, ({ document, AIDN }) => {
+    const text = document.querySelector("p").firstChild;
+    const range = document.createRange();
+    range.setStart(text, 3);
+    range.setEnd(text, 8);
+    const html = AIDN.normalize.normalizeRange(range, document);
+    const md = AIDN.htmlToMarkdown(html, document);
+    assert.equal(md, "设计 sidebar 时有三组核心权衡：");
+  });
+});
+
 test("端到端：列表 HTML 经管道入库后 contentMarkdown 保留列表", async () => {
   await withDom(fixture("kimi-list.html"), [...CORE, "adapters/chrome/kv.js", "adapters/chrome/storage-note-repo.js"],
     async ({ document, AIDN }) => {
