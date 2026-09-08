@@ -81,9 +81,11 @@ npm test   # node --test：note schema / 迁移 / 搜索 / 管道编排 / repo �
 DOM 相关（块归一化、html-to-markdown）目前走浏览器手动验证清单，
 引入 jsdom 后自动化。
 
+支持平台：ChatGPT（chatgpt.com）、Kimi（kimi.com / kimi.moonshot.cn）。
+
 ## 扩展新平台 / 新来源
 
-- 新网页平台：`site-profiles.js` 加一份纯数据 + manifest 加 matches，核心零改动
+- 新网页平台：`site-profiles.js` 加一份纯数据 + manifest 加 matches + SW 右键菜单 patterns 加域名，核心零改动（Kimi 接入即此路径，见 commit 历史）
 - 新内容类型（如 KaTeX 公式）：`aidn.advanced.registerSerializer({test, serialize})`
 - 桌面 Agent：实现 `LocalHttpSource`（CaptureSource 端口），桌面进程
   `POST 127.0.0.1:PORT/capture` 即进入同一条管道

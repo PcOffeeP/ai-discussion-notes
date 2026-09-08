@@ -17,8 +17,21 @@
         return active && active.textContent.trim() ? active.textContent.trim() : "";
       },
     },
+    {
+      platform: "Kimi",
+      sourceType: "chat",
+      matches: (hostname) => /(^|\.)(kimi\.com|kimi\.moonshot\.cn)$/.test(hostname),
+      getTitle(doc) {
+        // Kimi 标题通常为「对话标题 - Kimi」形态，做同样的后缀剥离 + 侧栏高亮回退
+        const t = (doc.title || "").replace(/\s*[-–—]\s*Kimi\s*$/i, "").trim();
+        if (t && t.toLowerCase() !== "kimi") return t;
+        const active = doc.querySelector(
+          '[class*="chat-list"] [class*="active"], [class*="conversation"][class*="active"], [aria-current="page"]'
+        );
+        return active && active.textContent.trim() ? active.textContent.trim() : "";
+      },
+    },
     // 未来：
-    // { platform: "Kimi",   sourceType: "chat", matches: h => /(^|\.)kimi\.com$/.test(h), getTitle: ... },
     // { platform: "Claude", sourceType: "chat", matches: h => /(^|\.)claude\.ai$/.test(h), getTitle: ... },
   ];
 

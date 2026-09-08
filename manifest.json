@@ -4,7 +4,14 @@
   "version": "0.2.0",
   "description": "Save the best things you learn from AI.",
   "permissions": ["storage", "contextMenus"],
-  "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://kimi.com/*",
+    "https://www.kimi.com/*",
+    "https://kimi.moonshot.cn/*",
+    "https://www.kimi.moonshot.cn/*"
+  ],
   "background": {
     "service_worker": "background/service-worker.js"
   },
@@ -13,7 +20,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://kimi.com/*",
+        "https://www.kimi.com/*",
+        "https://kimi.moonshot.cn/*",
+        "https://www.kimi.moonshot.cn/*"
+      ],
       "js": [
         "core/note.js",
         "core/html-to-markdown.js",
