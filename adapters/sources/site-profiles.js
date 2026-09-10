@@ -31,6 +31,20 @@
         return active && active.textContent.trim() ? active.textContent.trim() : "";
       },
     },
+    {
+      platform: "DeepSeek",
+      sourceType: "chat",
+      matches: (hostname) => /(^|\.)chat\.deepseek\.com$/.test(hostname),
+      getTitle(doc) {
+        // DeepSeek 标题通常为「对话标题 - DeepSeek」形态，做同样的后缀剥离 + 侧栏高亮回退
+        const t = (doc.title || "").replace(/\s*[-–—]\s*DeepSeek\s*$/i, "").trim();
+        if (t && t.toLowerCase() !== "deepseek") return t;
+        const active = doc.querySelector(
+          '[class*="active"] [class*="title"], [class*="conversation"][class*="active"], [aria-current="page"]'
+        );
+        return active && active.textContent.trim() ? active.textContent.trim() : "";
+      },
+    },
     // 未来：
     // { platform: "Claude", sourceType: "chat", matches: h => /(^|\.)claude\.ai$/.test(h), getTitle: ... },
   ];

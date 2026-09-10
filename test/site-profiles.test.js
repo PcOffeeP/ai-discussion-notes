@@ -18,6 +18,10 @@ test("Kimi 域名匹配（含 www 与旧域名）", () => {
   assert.equal(matchProfile("www.kimi.moonshot.cn").platform, "Kimi");
 });
 
+test("DeepSeek 域名匹配", () => {
+  assert.equal(matchProfile("chat.deepseek.com").platform, "DeepSeek");
+});
+
 test("未注册平台返回 null", () => {
   assert.equal(matchProfile("claude.ai"), null);
   assert.equal(matchProfile("example.com"), null);
@@ -39,4 +43,6 @@ test("getTitle 剥离平台后缀", () => {
   assert.equal(gpt.getTitle({ title: "学习方法讨论 - ChatGPT", querySelector: () => null }), "学习方法讨论");
   const kimi = matchProfile("kimi.com");
   assert.equal(kimi.getTitle({ title: "读书笔记 - Kimi", querySelector: () => null }), "读书笔记");
+  const ds = matchProfile("chat.deepseek.com");
+  assert.equal(ds.getTitle({ title: "代码重构讨论 - DeepSeek", querySelector: () => null }), "代码重构讨论");
 });

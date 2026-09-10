@@ -24,6 +24,7 @@ const CONTEXT_MENU_PATTERNS = [
   "https://www.kimi.com/*",
   "https://kimi.moonshot.cn/*",
   "https://www.kimi.moonshot.cn/*",
+  "https://chat.deepseek.com/*",
 ];
 
 // ---- 右键菜单（备用捕获入口，与悬浮按钮共用同一条管道） ----
@@ -44,7 +45,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const hostname = new URL(info.pageUrl || tab.url || "https://unknown").hostname;
     const profile = AIDN.matchProfile(hostname);
     const title = (tab.title || "")
-      .replace(/\s*[-–—]\s*(ChatGPT|Kimi)\s*$/i, "")
+      .replace(/\s*[-–—]\s*(ChatGPT|Kimi|DeepSeek)\s*$/i, "")
       .trim();
     await aidn.advanced.saveRaw({
       text: info.selectionText || "",

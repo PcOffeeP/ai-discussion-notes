@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Discussion Notes",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Save the best things you learn from AI.",
   "permissions": ["storage", "contextMenus"],
   "host_permissions": [
@@ -10,13 +10,26 @@
     "https://kimi.com/*",
     "https://www.kimi.com/*",
     "https://kimi.moonshot.cn/*",
-    "https://www.kimi.moonshot.cn/*"
+    "https://www.kimi.moonshot.cn/*",
+    "https://chat.deepseek.com/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js"
   },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
-    "default_title": "Open AI Discussion Notes"
+    "default_title": "Open AI Discussion Notes",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
@@ -26,7 +39,8 @@
         "https://kimi.com/*",
         "https://www.kimi.com/*",
         "https://kimi.moonshot.cn/*",
-        "https://www.kimi.moonshot.cn/*"
+        "https://www.kimi.moonshot.cn/*",
+        "https://chat.deepseek.com/*"
       ],
       "js": [
         "core/note.js",

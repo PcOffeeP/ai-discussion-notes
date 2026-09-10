@@ -1,5 +1,9 @@
 # AI Discussion Notes — MVP 浏览器扩展
 
+<p align="center">
+  <img src="icons/icon128.png" alt="AI Discussion Notes logo" width="128" />
+</p>
+
 按照《AI Discussion Notes — MVP 初始设计文档 v0.1》实现的 Chrome 扩展（Manifest V3）。
 
 > Save the best things you learn from AI.
@@ -81,7 +85,7 @@ npm test   # node --test：note schema / 迁移 / 搜索 / 管道编排 / repo �
 DOM 相关（块归一化、html-to-markdown）目前走浏览器手动验证清单，
 引入 jsdom 后自动化。
 
-支持平台：ChatGPT（chatgpt.com）、Kimi（kimi.com / kimi.moonshot.cn）。
+支持平台：ChatGPT（chatgpt.com）、Kimi（kimi.com / kimi.moonshot.cn）、DeepSeek（chat.deepseek.com）。
 
 ## 扩展新平台 / 新来源
 
