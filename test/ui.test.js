@@ -217,4 +217,22 @@ test("notes 页面 UI 冒烟", async (t) => {
     document.getElementById("side-all").click();
     await delay(100);
   });
+
+  await t.test("来源列表显示平台图标：已知平台 SVG，未知平台首字母兜底", () => {
+    const items = [...document.querySelectorAll("#side-sources .side-item")];
+    const iconOf = (name) =>
+      items.find((i) => i.querySelector(".side-label").textContent === name)?.querySelector(".side-icon");
+    // ChatGPT = 已知平台 → 本地 SVG
+    const gptIcon = iconOf("ChatGPT");
+    assert.ok(gptIcon, "ChatGPT 应有图标");
+    assert.ok(gptIcon.querySelector('img[src="icons/chatgpt.svg"]'));
+    // Claude / Gemini = 未知平台 → 首字母圆点，不请求不存在的资源
+    for (const name of ["Claude", "Gemini"]) {
+      const icon = iconOf(name);
+      assert.ok(icon, `${name} 应有兜底图标`);
+      assert.ok(icon.classList.contains("side-icon-letter"));
+      assert.equal(icon.textContent, name.charAt(0));
+      assert.ok(!icon.querySelector("img"));
+    }
+  });
 });

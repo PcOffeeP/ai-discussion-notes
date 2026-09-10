@@ -120,11 +120,31 @@ body {
 .side-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .side-item.active .side-count { color: var(--accent); }
 .side-item .side-label {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.side-count { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
+.side-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.side-icon img { width: 16px; height: 16px; display: block; }
+.side-icon-letter {
+  border-radius: 50%;
+  background: var(--surface-group);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+}
+.side-count { color: var(--text-muted); font-size: 12px; flex-shrink: 0; margin-left: auto; }
 .side-more {
   width: 100%;
   padding: 6px 10px;

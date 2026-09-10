@@ -92,7 +92,8 @@
       sideSources.appendChild(sideItem(
         source, count,
         filter.type === "source" && filter.value === source,
-        () => setFilter({ type: "source", value: source }, `source=${encodeURIComponent(source)}`)
+        () => setFilter({ type: "source", value: source }, `source=${encodeURIComponent(source)}`),
+        sourceIconEl(source)
       ));
     }
 
@@ -120,9 +121,29 @@
     }
   }
 
-  function sideItem(label, count, active, onClick) {
+  // ---- 平台图标（notes/icons/<platform>.svg；未知名平台用首字母圆点兜底） ----
+  const KNOWN_ICON_SOURCES = new Set(["chatgpt", "kimi", "deepseek"]);
+  function sourceIconEl(source) {
+    const key = (source || "").toLowerCase();
+    const icon = document.createElement("span");
+    icon.className = "side-icon";
+    icon.setAttribute("aria-hidden", "true");
+    if (KNOWN_ICON_SOURCES.has(key)) {
+      const img = document.createElement("img");
+      img.src = `icons/${key}.svg`;
+      img.alt = "";
+      icon.appendChild(img);
+    } else {
+      icon.classList.add("side-icon-letter");
+      icon.textContent = (source || "?").trim().charAt(0).toUpperCase() || "?";
+    }
+    return icon;
+  }
+
+  function sideItem(label, count, active, onClick, iconEl) {
     const btn = document.createElement("button");
     btn.className = "side-item" + (active ? " active" : "");
+    if (iconEl) btn.appendChild(iconEl);
     const l = document.createElement("span");
     l.className = "side-label";
     l.textContent = label;
