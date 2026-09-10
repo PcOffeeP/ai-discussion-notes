@@ -7,6 +7,7 @@
   const groupsEl = document.getElementById("groups");
   const emptyEl = document.getElementById("empty-state");
   const noResultsEl = document.getElementById("no-results");
+  const resultCountEl = document.getElementById("result-count");
   const searchEl = document.getElementById("search");
   const noteCountEl = document.getElementById("note-count");
   const captureToggle = document.getElementById("capture-toggle");
@@ -19,6 +20,8 @@
   let allNotes = [];           // 全量（搜索前的基底）
   let query = "";
   let filter = { type: "all", value: null }; // sidebar 过滤：all | source | conversation
+  let convExpanded = false;                 // sidebar Conversations 是否显示全部
+  const CONV_PREVIEW = 10;                  // 默认只显示最近约 10 条对话
   const rawViewIds = new Set();
   const COLLAPSED_KEY = "aidn-collapsed-groups";
   const collapsedGroups = new Set(readJson(localStorage.getItem(COLLAPSED_KEY), []));
@@ -94,13 +97,26 @@
     }
 
     sideConversations.innerHTML = "";
-    for (const g of AIDN.group.groupByConversation(base)) {
+    const convs = AIDN.group.groupByConversation(base);
+    // 若当前选中的对话不在前 10 条内，自动展开，避免选中项不可见
+    const activeOutside =
+      filter.type === "conversation" &&
+      convs.findIndex((g) => g.key === filter.value) >= CONV_PREVIEW;
+    const expanded = convExpanded || activeOutside;
+    for (const g of expanded ? convs : convs.slice(0, CONV_PREVIEW)) {
       const label = g.title || "未命名对话";
       sideConversations.appendChild(sideItem(
         `${label}`, `${g.source} · ${g.count}`,
         filter.type === "conversation" && filter.value === g.key,
         () => setFilter({ type: "conversation", value: g.key }, `conv=${encodeURIComponent(g.key)}`)
       ));
+    }
+    if (convs.length > CONV_PREVIEW) {
+      const more = document.createElement("button");
+      more.className = "side-more";
+      more.textContent = expanded ? "收起" : `显示全部（${convs.length}）`;
+      more.addEventListener("click", () => { convExpanded = !expanded; renderSidebar(); });
+      sideConversations.appendChild(more);
     }
   }
 
@@ -186,47 +202,77 @@
     const timeEl = document.createElement("time");
     timeEl.textContent = relativeTime(note.createdAt);
     timeEl.title = absoluteTime(note.createdAt);
-    meta.append(document.createTextNode(note.source || "unknown"), timeEl);
+    meta.appendChild(timeEl);
 
     const actions = document.createElement("div");
     actions.className = "note-actions";
 
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "note-copy";
+    copyBtn.textContent = "复制";
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(note.contentMarkdown || note.contentText || "");
+        copyBtn.textContent = "已复制";
+        setTimeout(() => (copyBtn.textContent = "复制"), 1200);
+      } catch (_) { /* clipboard unavailable */ }
+    });
+
+    // 更多操作：Markdown/预览切换 + 删除（入口收敛到 ⋯ 菜单）
+    const menuWrap = document.createElement("div");
+    menuWrap.className = "note-menu-wrap";
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "note-more";
+    moreBtn.textContent = "⋯";
+    moreBtn.title = "更多操作";
+    moreBtn.setAttribute("aria-label", "更多操作");
+    moreBtn.setAttribute("aria-expanded", "false");
+
+    const menu = document.createElement("div");
+    menu.className = "note-menu hidden";
+    menu.setAttribute("role", "menu");
+
     const rawBtn = document.createElement("button");
-    rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
+    rawBtn.setAttribute("role", "menuitem");
+    rawBtn.textContent = rawViewIds.has(note.id) ? "预览" : "Markdown";
     rawBtn.addEventListener("click", () => {
       if (rawViewIds.has(note.id)) rawViewIds.delete(note.id);
       else rawViewIds.add(note.id);
       li.classList.remove("truncated");
       li.replaceChild(buildContentEl(note), li.querySelector(".note-content"));
-      rawBtn.textContent = rawViewIds.has(note.id) ? "Preview" : "Markdown";
-    });
-
-    const copyBtn = document.createElement("button");
-    copyBtn.textContent = "Copy";
-    copyBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(note.contentMarkdown || note.contentText || "");
-        copyBtn.textContent = "Copied";
-        setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
-      } catch (_) { /* clipboard unavailable */ }
-    });
-
-    const openBtn = document.createElement("button");
-    openBtn.textContent = "Open Source";
-    openBtn.disabled = !note.conversationUrl;
-    openBtn.addEventListener("click", () => {
-      if (note.conversationUrl) window.open(note.conversationUrl, "_blank", "noopener");
+      rawBtn.textContent = rawViewIds.has(note.id) ? "预览" : "Markdown";
+      closeMenu();
     });
 
     const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
+    delBtn.className = "danger";
+    delBtn.setAttribute("role", "menuitem");
+    delBtn.textContent = "删除";
     delBtn.addEventListener("click", async () => {
       await aidn.remove(note.id);
       rawViewIds.delete(note.id);
       await refresh();
     });
 
-    actions.append(rawBtn, copyBtn, openBtn, delBtn);
+    menu.append(rawBtn, delBtn);
+
+    function closeMenu() {
+      menu.classList.add("hidden");
+      moreBtn.setAttribute("aria-expanded", "false");
+    }
+    moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = menu.classList.toggle("hidden");
+      moreBtn.setAttribute("aria-expanded", String(!open));
+    });
+    menu.addEventListener("click", (e) => e.stopPropagation());
+    // 点击卡片外任意处关闭菜单
+    document.addEventListener("click", (e) => {
+      if (!menuWrap.contains(e.target)) closeMenu();
+    });
+
+    menuWrap.append(moreBtn, menu);
+    actions.append(copyBtn, menuWrap);
     li.append(actions, meta);
     return li;
   }
@@ -238,6 +284,14 @@
 
     emptyEl.classList.toggle("hidden", allNotes.length !== 0);
     noResultsEl.classList.toggle("hidden", !(allNotes.length > 0 && visible.length === 0));
+
+    // 搜索时显示结果数量
+    if (query && visible.length > 0) {
+      resultCountEl.textContent = `找到 ${visible.length} 条笔记`;
+      resultCountEl.classList.remove("hidden");
+    } else {
+      resultCountEl.classList.add("hidden");
+    }
 
     for (const g of AIDN.group.groupByConversation(visible)) {
       const section = document.createElement("section");
@@ -261,7 +315,7 @@
 
       const openBtn = document.createElement("button");
       openBtn.className = "group-open";
-      openBtn.textContent = "Open Source";
+      openBtn.textContent = "打开来源";
       openBtn.disabled = !g.conversationUrl;
       openBtn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -336,7 +390,7 @@
   });
 
   document.getElementById("clear-btn").addEventListener("click", async () => {
-    if (!confirm("Delete all saved notes? This cannot be undone.")) return;
+    if (!confirm("确定删除所有已保存的笔记吗？此操作不可撤销。")) return;
     await aidn.advanced.clearAll();
     await refresh();
   });

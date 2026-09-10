@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Discussion Notes</title>
+  <title>AI 讨论笔记</title>
   <link rel="stylesheet" href="notes.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1 class="brand">AI Discussion Notes</h1>
+    <h1 class="brand">AI 讨论笔记</h1>
     <div class="topbar-actions">
-      <input id="search" type="search" placeholder="Search notes..." autocomplete="off" />
-      <button id="settings-btn" class="ghost-btn" title="Settings">Settings</button>
+      <input id="search" type="search" placeholder="搜索笔记…" autocomplete="off" />
+      <button id="settings-btn" class="ghost-btn" title="设置">设置</button>
     </div>
   </header>
 
@@ -19,24 +19,25 @@
     <!-- Sidebar：过滤器，不是管理器（消费已有数据，不引入新实体） -->
     <nav class="sidebar" id="sidebar">
       <button class="side-item" id="side-all" data-filter="all">
-        <span>All Notes</span><span class="side-count" id="count-all">0</span>
+        <span>全部笔记</span><span class="side-count" id="count-all">0</span>
       </button>
-      <div class="side-section">Sources</div>
+      <div class="side-section">来源</div>
       <div id="side-sources"></div>
-      <div class="side-section">Conversations</div>
+      <div class="side-section">对话</div>
       <div id="side-conversations"></div>
     </nav>
 
     <main class="main">
       <!-- Empty state（兼产品教学） -->
       <section id="empty-state" class="empty hidden">
-        <h2>Your best AI insights, saved.</h2>
-        <p>Select useful text in ChatGPT and save it here.</p>
-        <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
+        <h2>保存你的最佳 AI 洞见。</h2>
+        <p>在 ChatGPT 中选中有价值的文字，即可保存到这里。</p>
+        <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">打开 ChatGPT</a>
       </section>
 
+      <p id="result-count" class="result-count hidden"></p>
       <div id="groups" class="groups"></div>
-      <p id="no-results" class="no-results hidden">No notes match.</p>
+      <p id="no-results" class="no-results hidden">没有找到匹配的笔记。</p>
     </main>
   </div>
 
@@ -44,24 +45,24 @@
   <div id="settings-overlay" class="overlay hidden"></div>
   <aside id="settings-panel" class="settings hidden" aria-label="Settings">
     <div class="settings-head">
-      <h2>Settings</h2>
-      <button id="settings-close" class="ghost-btn">Close</button>
+      <h2>设置</h2>
+      <button id="settings-close" class="ghost-btn">关闭</button>
     </div>
 
     <section class="settings-section">
-      <h3>Capture Button</h3>
+      <h3>抓取按钮</h3>
       <label class="toggle-row">
         <input type="checkbox" id="capture-toggle" />
-        <span>Show the "＋ Note" button when text is selected</span>
+        <span>选中文字时显示「＋ Note」按钮</span>
       </label>
     </section>
 
     <section class="settings-section">
-      <h3>Data</h3>
-      <p><span id="note-count">0</span> notes saved locally</p>
+      <h3>数据</h3>
+      <p>本地已保存 <span id="note-count">0</span> 条笔记</p>
       <div class="settings-actions">
-        <button id="export-btn" class="ghost-btn">Export Notes (JSON)</button>
-        <button id="clear-btn" class="danger-btn">Clear All Notes</button>
+        <button id="export-btn" class="ghost-btn">导出笔记（JSON）</button>
+        <button id="clear-btn" class="danger-btn">清空全部笔记</button>
       </div>
     </section>
   </aside>
