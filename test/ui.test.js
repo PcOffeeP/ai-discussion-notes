@@ -235,4 +235,18 @@ test("notes 页面 UI 冒烟", async (t) => {
       assert.ok(!icon.querySelector("img"));
     }
   });
+
+  await t.test("对话列表与分组头同款式来源图标", () => {
+    // 对话行：图标 + 纯数量（来源文字已收敛进图标）
+    const convItem = document.querySelector("#side-conversations .side-item");
+    assert.ok(convItem.querySelector(".side-icon"));
+    assert.match(convItem.querySelector(".side-count").textContent, /^\d+$/);
+    assert.ok(!convItem.querySelector(".side-label").textContent.includes("·"));
+    // 分组头：caret + 图标 + 标题 + 元信息
+    const gh = document.querySelector(".group-header");
+    const ghIcon = gh.querySelector(".group-icon");
+    assert.ok(ghIcon, "分组头应有来源图标");
+    assert.ok(ghIcon.querySelector("img, .side-icon-letter") !== null || ghIcon.textContent.trim().length === 1);
+    assert.match(gh.querySelector(".group-meta").textContent, /· \d+ 条 ·/);
+  });
 });

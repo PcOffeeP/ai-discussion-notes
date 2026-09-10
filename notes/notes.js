@@ -106,11 +106,15 @@
     const expanded = convExpanded || activeOutside;
     for (const g of expanded ? convs : convs.slice(0, CONV_PREVIEW)) {
       const label = g.title || "未命名对话";
-      sideConversations.appendChild(sideItem(
-        `${label}`, `${g.source} · ${g.count}`,
+      const item = sideItem(
+        label, String(g.count),
         filter.type === "conversation" && filter.value === g.key,
-        () => setFilter({ type: "conversation", value: g.key }, `conv=${encodeURIComponent(g.key)}`)
-      ));
+        () => setFilter({ type: "conversation", value: g.key }, `conv=${encodeURIComponent(g.key)}`),
+        sourceIconEl(g.source)
+      );
+      // 来源由图标标识：悬浮时以 tooltip 形式保留文字信息
+      item.title = `${label} — ${g.source}`;
+      sideConversations.appendChild(item);
     }
     if (convs.length > CONV_PREVIEW) {
       const more = document.createElement("button");
@@ -325,6 +329,9 @@
       caret.className = "group-caret";
       caret.textContent = "▾";
 
+      const icon = sourceIconEl(g.source);
+      icon.classList.add("group-icon");
+
       const title = document.createElement("span");
       title.className = "group-title";
       title.textContent = g.title || "未命名对话";
@@ -343,7 +350,7 @@
         if (g.conversationUrl) window.open(g.conversationUrl, "_blank", "noopener");
       });
 
-      header.append(caret, title, meta, openBtn);
+      header.append(caret, icon, title, meta, openBtn);
       header.addEventListener("click", () => {
         if (collapsedGroups.has(g.key)) collapsedGroups.delete(g.key);
         else collapsedGroups.add(g.key);
