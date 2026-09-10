@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>大模型输出笔记 · 图标定稿</title>
+<style>
+  :root{
+    --paper:#F4EFE4; --card:#FBF8F0; --ink:#1F2437; --muted:#7C7768;
+    --line:rgba(31,36,55,.12); --accent:#3B6FF5; --deep:#151924;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  main{max-width:940px; margin:0 auto; padding:72px 40px 96px}
+  .kicker{margin:0 0 16px; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
+  h1{margin:0 0 14px; font-size:40px; line-height:1.25; letter-spacing:-.01em; font-weight:600}
+  .lede{margin:0; max-width:620px; font-size:16px; color:var(--muted)}
+  section{margin-top:72px}
+  h2{margin:0 0 22px; font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  .hero{display:flex; gap:44px; align-items:center; margin-top:56px; padding:40px; background:var(--card);
+        border:1px solid var(--line); border-radius:22px}
+  .hero svg{width:200px; height:200px; display:block; flex:none}
+  .hero dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:10px 24px; font-size:14px}
+  .hero dt{color:var(--muted)}
+  .hero dd{margin:0}
+  .ladder{display:flex; align-items:flex-end; gap:56px; padding:40px; background:var(--card);
+          border:1px solid var(--line); border-radius:22px; flex-wrap:wrap}
+  .step{text-align:center}
+  .step img{display:block; margin:0 auto 14px}
+  .step span{font-size:12px; color:var(--muted); letter-spacing:.06em}
+  .zoom img{image-rendering:pixelated; width:128px}
+  .darkband{padding:40px; background:var(--deep); border-radius:22px; display:flex;
+            align-items:center; gap:44px; flex-wrap:wrap}
+  .darkband svg{width:180px; height:180px; display:block}
+  .darkband p{margin:0; color:#9AA2B4; font-size:14px; max-width:400px}
+  .darkband strong{color:#F0EAE1; display:block; margin-bottom:8px; font-size:15px}
+  .swatches{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px}
+  .sw{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--card)}
+  .sw i{display:block; height:76px}
+  .sw div{padding:12px 14px; font-size:12px; line-height:1.6}
+  .sw b{display:block; font-size:13px; font-weight:600; margin-bottom:2px}
+  .sw code{color:var(--muted); font-size:11px}
+  .notes{margin:0; padding:0; list-style:none; display:grid; gap:14px}
+  .notes li{padding:18px 22px; background:var(--card); border:1px solid var(--line);
+            border-radius:14px; font-size:14px; display:grid; grid-template-columns:110px 1fr; gap:20px}
+  .notes b{font-weight:600}
+  table{width:100%; border-collapse:collapse; font-size:13px; background:var(--card);
+        border:1px solid var(--line); border-radius:14px; overflow:hidden}
+  th,td{text-align:left; padding:12px 18px; border-bottom:1px solid var(--line)}
+  th{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  tr:last-child td{border-bottom:0}
+  td code{color:var(--muted); font-size:12px}
+  footer{margin-top:88px; padding-top:28px; border-top:1px solid var(--line);
+         font-size:12px; color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">大模型输出笔记 · 图标定稿</p>
+    <h1>对话气泡里，<br/>一段被选中的输出</h1>
+    <p class="lede">整个图标只讲一个动作：在 AI 的回答里框住一段，把它摘下来。气泡说明来源是"对话"，蓝色选区说明"选中"，指针说明这是你亲手做的。</p>
+  </header>
+
+  <div class="hero">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" aria-label="图标"><rect class="plate" width="512" height="512" aria-label="图标" rx="114" fill="#F4EFE4"/><path class="bubble" d="M130 84H382A60 60 0 0 1 442 144V296A60 60 0 0 1 382 356H216L146 430L144 356H130A60 60 0 0 1 70 296V144A60 60 0 0 1 130 84Z" fill="#FBF8F0" stroke="#1F2437" stroke-width="24" stroke-linejoin="round"/><rect class="faint" x="140" y="138" width="232" height="22" rx="11" fill="#1F2437" fill-opacity="0.30"/><rect class="accent" x="128" y="186" width="216" height="68" rx="14" fill="#3B6FF5"/><rect class="onaccent" x="146" y="209" width="180" height="22" rx="11" fill="#FBF8F0"/><rect class="faint" x="140" y="280" width="160" height="22" rx="11" fill="#1F2437" fill-opacity="0.30"/><g transform="translate(318 232) scale(2.2)"><path class="pt-fill pt-stroke" d="M0 0L0 26L6.5 20L12 31L18 28L12.5 17.5L21 17.5Z" fill="#FBF8F0" stroke="#1F2437" stroke-width="4.5" stroke-linejoin="round"/></g></svg>
+    <dl>
+      <dt>方向</dt><dd>A · 描边线稿</dd>
+      <dt>构造</dt><dd>气泡轮廓 24 单位描边，选区为全图唯一高饱和色</dd>
+      <dt>版本</dt><dd>16px 极简式 / 32px 剪影式 / 48px+ 完整版</dd>
+      <dt>适配</dt><dd>SVG 内嵌深色模式，PNG 另附深色版</dd>
+    </dl>
+  </div>
+
+  <section>
+    <h2>尺寸阶梯</h2>
+    <div class="ladder">
+      <div class="step zoom"><img src="icon-16.png" alt="16px"/><span>16 px（放大 8×）</span></div>
+      <div class="step"><img src="icon-32.png" width="64" height="64" alt="32px"/><span>32 px</span></div>
+      <div class="step"><img src="icon-48.png" width="72" height="72" alt="48px"/><span>48 px</span></div>
+      <div class="step"><img src="icon-128.png" width="128" height="128" alt="128px"/><span>128 px</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>深色环境</h2>
+    <div class="darkband">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect class="plate" width="512" height="512" rx="114" fill="#151924"/><path class="bubble" d="M130 84H382A60 60 0 0 1 442 144V296A60 60 0 0 1 382 356H216L146 430L144 356H130A60 60 0 0 1 70 296V144A60 60 0 0 1 130 84Z" fill="#202739" stroke="#F0EAE1" stroke-width="24" stroke-linejoin="round"/><rect class="faint" x="140" y="138" width="232" height="22" rx="11" fill="#F0EAE1" fill-opacity="0.30"/><rect class="accent" x="128" y="186" width="216" height="68" rx="14" fill="#5B87FF"/><rect class="onaccent" x="146" y="209" width="180" height="22" rx="11" fill="#10141F"/><rect class="faint" x="140" y="280" width="160" height="22" rx="11" fill="#F0EAE1" fill-opacity="0.30"/><g transform="translate(318 232) scale(2.2)"><path class="pt-fill pt-stroke" d="M0 0L0 26L6.5 20L12 31L18 28L12.5 17.5L21 17.5Z" fill="#F0EAE1" stroke="#F0EAE1" stroke-width="4.5" stroke-linejoin="round"/></g></svg>
+      <p><strong>深色版不是反相，是重配。</strong>底板落到 #151924，气泡提到 #202739，墨线转亮，强调色提到 #5B87FF —— 蓝色在暗底上会发闷，必须提亮才立得住。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>色板</h2>
+    <div class="swatches">
+      <div class="sw"><i style="background:#F4EFE4"></i><div><b>纸 · 底</b><code>#F4EFE4</code></div></div>
+      <div class="sw"><i style="background:#FBF8F0"></i><div><b>纸 · 亮</b><code>#FBF8F0</code></div></div>
+      <div class="sw"><i style="background:#1F2437"></i><div><b>墨</b><code>#1F2437</code></div></div>
+      <div class="sw"><i style="background:#3B6FF5"></i><div><b>选中</b><code>#3B6FF5</code></div></div>
+      <div class="sw"><i style="background:#151924"></i><div><b>暗 · 底</b><code>#151924</code></div></div>
+      <div class="sw"><i style="background:#5B87FF"></i><div><b>暗 · 选中</b><code>#5B87FF</code></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>两处刻意的取舍</h2>
+    <ul class="notes">
+      <li><b>16 px 撤指针</b><span>指针缩到 16px 只剩两个像素，和选区糊成一团。宁可少一个元素，也要让"气泡 + 选区"读得出来。</span></li>
+      <li><b>32 px 挪指针</b><span>32px 保留指针，但把它从选区里挪到右下方，避免与蓝色块压叠 —— 重叠在放大看时很脏。</span></li>
+      <li><b>选区只用一个彩色</b><span>全图唯一的高饱和色就是蓝。别的地方一律纸墨二色，视线自然落到"选中的那句"上。</span></li>
+      <li><b>不用渐变和投影</b><span>扁平到底。图标要在工具栏里排队站着，一有光影就和邻居打架。</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>交付文件</h2>
+    <table>
+      <tr><th>文件</th><th>说明</th></tr>
+      <tr><td><code>icon.svg</code></td><td>主源，512 视图框，内嵌深色模式</td></tr>
+      <tr><td><code>icon-small.svg</code></td><td>32px 剪影源</td></tr>
+      <tr><td><code>icon-tiny.svg</code></td><td>16px 极简源</td></tr>
+      <tr><td><code>icon-16 / 32 / 48 / 128 / 512.png</code></td><td>各尺寸 PNG，带透明通道</td></tr>
+      <tr><td><code>icon-dark-512.png</code></td><td>深色版 512 参考</td></tr>
+      <tr><td><code>preview.html</code></td><td>本页</td></tr>
+    </table>
+  </section>
+
+  <footer>大模型输出笔记 · 图标 A 方向定稿 · 2026-09-10</footer>
+</main>
+</body>
+</html>
