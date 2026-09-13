@@ -5,6 +5,7 @@
 // @interface NoteRepo —— 持久化端口
 //   save(note: Note): Promise<Note>
 //   list(): Promise<Note[]>            // 实现方负责迁移，返回的永远是当前 schema
+//   update(id: string, patch: object): Promise<Note|null>  // 部分字段合并；patch 须可序列化（要跨消息边界）
 //   delete(id: string): Promise<void>
 //   clear(): Promise<number>           // 返回清除条数
 //   生产适配器: adapters/chrome/storage-note-repo.js (service worker)

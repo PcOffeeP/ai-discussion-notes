@@ -36,6 +36,13 @@
 
   /* 卡片折叠 */
   --card-collapsed-h: 280px;
+
+  /* 想法便利贴 */
+  --sticky-w: 208px;
+  --sticky-bg: #e9f2fd;
+  --sticky-border: #d6e4f7;
+  --sticky-head: #5b7ba6;
+  --sticky-placeholder: #93a4bb;
 }
 
 * { box-sizing: border-box; }
@@ -220,11 +227,15 @@ body {
 /* ---------- Note 卡片 ---------- */
 .note-card {
   position: relative;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   padding: 18px 20px 14px;
 }
+.note-main { flex: 1; min-width: 0; }
 .note-card + .note-card { margin-top: var(--gap-card); }
 .note-card:hover { border-color: #d9d5cd; }
 
@@ -270,6 +281,14 @@ body {
   gap: 4px;
   align-items: center;
 }
+/* 展开便利贴时，操作区左移让位 */
+.note-card.sticky-open .note-actions { right: calc(var(--sticky-w) + 38px); }
+/* 已有想法的卡片：想法按钮常驻可见（不依赖 hover） */
+.note-card.has-thoughts .note-actions { display: flex; }
+.note-card.has-thoughts .note-actions :is(.note-copy, .note-menu-wrap) { display: none; }
+.note-card.has-thoughts:hover .note-actions :is(.note-copy, .note-menu-wrap),
+.note-actions:focus-within :is(.note-copy, .note-menu-wrap) { display: block; }
+.note-thought-btn[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); }
 .note-card:hover .note-actions,
 .note-actions:focus-within { display: flex; }
 .note-actions button {
@@ -379,6 +398,74 @@ body {
   color: #374151;
 }
 
+/* ---------- 想法便利贴（卡片右侧，按钮展开） ---------- */
+.note-sticky {
+  display: none;
+  width: var(--sticky-w);
+  flex-shrink: 0;
+  background: var(--sticky-bg);
+  border: 1px solid var(--sticky-border);
+  border-radius: 8px;
+  padding: 10px 12px 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.07);
+}
+.note-sticky-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sticky-head);
+  margin-bottom: 4px;
+  transition: color 0.3s ease;
+}
+.note-sticky-head.flash { color: var(--accent); }
+.note-thought { padding: 6px 0; }
+.note-thought + .note-thought { border-top: 1px dashed var(--sticky-border); }
+.note-thought-text { white-space: pre-wrap; word-break: break-word; }
+.note-thought-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--sticky-placeholder);
+}
+.note-thought-del {
+  border: none;
+  background: none;
+  color: var(--sticky-placeholder);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0;
+}
+.note-thought:hover .note-thought-del,
+.note-thought-del:focus-visible { opacity: 1; }
+.note-thought-del:hover { color: #b3382e; }
+.note-thought-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: transparent;
+  resize: none;
+  font: inherit;
+  color: var(--text-primary);
+  outline: none;
+  overflow: hidden;
+}
+.note-thought-input::placeholder { color: var(--sticky-placeholder); }
+.note-sticky-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--sticky-placeholder);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.note-sticky:focus-within .note-sticky-hint { opacity: 1; }
+.note-card.sticky-open .note-sticky { display: block; }
+
 /* ---------- 空状态 ---------- */
 .empty { text-align: center; padding: 90px 20px; }
 .empty h2 { font-size: 22px; margin: 0 0 10px; }
@@ -458,4 +545,11 @@ body {
 @media (max-width: 860px) {
   .sidebar { display: none; }
   .layout { justify-content: center; }
+}
+
+/* 更窄：便利贴换行到内容下方，操作按钮回到右上角 */
+@media (max-width: 620px) {
+  .note-card { flex-direction: column; }
+  .note-sticky { width: 100%; }
+  .note-actions { right: 12px; }
 }

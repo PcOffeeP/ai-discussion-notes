@@ -18,11 +18,31 @@
       return merged;
     }
 
+    // 写操作成功后向所有扩展页面广播变更（kind = save|update|delete|clear），
+    // 打开中的 Notes 页据此自动刷新，无需手动 F5。
+    // 覆盖 repo 层而非仅 handlers：右键菜单 fallback 等绕过 handlers 的写入同样会广播。
+    const notifyChanged = (kind) => {
+      try {
+        Promise.resolve(
+          rt.sendMessage({ __aidn: true, action: "notes.changed", payload: { kind } })
+        ).catch(() => { /* 无接收者时静默忽略 */ });
+      } catch (_) { /* 同上 */ }
+    };
+    const notifyingRepo = Object.assign({}, repo);
+    for (const method of ["save", "update", "delete", "clear"]) {
+      notifyingRepo[method] = async (...args) => {
+        const result = await repo[method](...args);
+        notifyChanged(method);
+        return result;
+      };
+    }
+
     const handlers = {
-      "notes.save": (note) => repo.save(AIDN.note.createNote(note)),
+      "notes.save": (note) => notifyingRepo.save(AIDN.note.createNote(note)),
       "notes.list": () => repo.list(),
-      "notes.delete": ({ id }) => repo.delete(id),
-      "notes.clear": () => repo.clear(),
+      "notes.update": ({ id, patch }) => notifyingRepo.update(id, patch),
+      "notes.delete": ({ id }) => notifyingRepo.delete(id),
+      "notes.clear": () => notifyingRepo.clear(),
       "settings.get": () => getSettings(),
       "settings.patch": (patch) => patchSettings(patch),
     };

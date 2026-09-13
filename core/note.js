@@ -42,9 +42,19 @@
       conversationTitle: dto.conversationTitle || "",
       conversationUrl: dto.conversationUrl || "",
       metadata: dto.metadata || {},
+      thoughts: Array.isArray(dto.thoughts) ? dto.thoughts : [],
       createdAt: dto.createdAt || new Date().toISOString(),
     };
     return note;
+  }
+
+  // 个人想法（便利贴）：附属于 Note 的轻量批注。
+  function createThought(text) {
+    return {
+      id: "thought_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8),
+      text: String(text || "").trim(),
+      createdAt: new Date().toISOString(),
+    };
   }
 
   // v1（单 content 字符串）→ v2，无损迁移；已是 v2 则原样返回。
@@ -64,16 +74,19 @@
     });
   }
 
-  // 简单全文搜索：contentText + contentMarkdown + conversationTitle
+  // 简单全文搜索：contentText + contentMarkdown + conversationTitle + thoughts
   function search(notes, query) {
     const q = String(query || "").trim().toLowerCase();
     if (!q) return notes;
     return notes.filter((n) =>
       (n.contentText || "").toLowerCase().includes(q) ||
       (n.contentMarkdown || "").toLowerCase().includes(q) ||
-      (n.conversationTitle || "").toLowerCase().includes(q)
+      (n.conversationTitle || "").toLowerCase().includes(q) ||
+      (Array.isArray(n.thoughts) ? n.thoughts : []).some((t) =>
+        (t.text || "").toLowerCase().includes(q)
+      )
     );
   }
 
-  AIDN.note = { SCHEMA_VERSION, createNote, migrate, search, markdownToText };
+  AIDN.note = { SCHEMA_VERSION, createNote, createThought, migrate, search, markdownToText };
 })(typeof self !== "undefined" ? self : globalThis);

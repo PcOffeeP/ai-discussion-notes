@@ -21,6 +21,7 @@
       // NoteRepo 远程门面
       save: (note) => call("notes.save", note),
       list: () => call("notes.list"),
+      update: (id, patch) => call("notes.update", { id, patch }),
       delete: (id) => call("notes.delete", { id }),
       clear: () => call("notes.clear"),
       // 设置

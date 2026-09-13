@@ -28,6 +28,16 @@
         return note;
       },
       list: readAll,
+      // update(id, patch)：patch 为部分字段对象，合并进原 note。
+      // 契约必须是「补丁对象」而非函数：补丁要跨 chrome.runtime 消息边界，函数无法序列化。
+      async update(id, patch) {
+        const all = await readAll();
+        const i = all.findIndex((n) => n.id === id);
+        if (i === -1) return null;
+        all[i] = Object.assign({}, all[i], patch);
+        await kv.set({ [NOTES_KEY]: all });
+        return all[i];
+      },
       async delete(id) {
         const all = await readAll();
         await kv.set({ [NOTES_KEY]: all.filter((n) => n.id !== id) });

@@ -49,13 +49,24 @@ function buildHarnessHtml() {
       }
     }
     const store = new Map(notes.map((n) => [n.id, n]));
+    const listeners = [];
+    window.__aidnStore = store; // 供「外部写入 + 广播」用例造数
+    window.__aidnEmitChanged = (payload) => {
+      for (const fn of listeners) fn({ __aidn: true, action: "notes.changed", payload });
+    };
     window.chrome = {
       runtime: {
         lastError: null,
+        onMessage: { addListener: (fn) => listeners.push(fn) },
         sendMessage(msg, cb) {
           setTimeout(() => {
             if (msg.action === "notes.list") cb({ ok: true, data: [...store.values()] });
             else if (msg.action === "notes.delete") { store.delete(msg.payload.id); cb({ ok: true, data: true }); }
+            else if (msg.action === "notes.update") {
+              const n = store.get(msg.payload.id);
+              if (n) store.set(n.id, Object.assign({}, n, msg.payload.patch));
+              cb({ ok: true, data: n ? store.get(n.id) : null });
+            }
             else if (msg.action === "notes.clear") { store.clear(); cb({ ok: true, data: true }); }
             else if (msg.action === "settings.get") cb({ ok: true, data: { captureButtonEnabled: true } });
             else if (msg.action === "settings.patch") cb({ ok: true, data: msg.payload });
@@ -248,5 +259,63 @@ test("notes 页面 UI 冒烟", async (t) => {
     assert.ok(ghIcon, "分组头应有来源图标");
     assert.ok(ghIcon.querySelector("img, .side-icon-letter") !== null || ghIcon.textContent.trim().length === 1);
     assert.match(gh.querySelector(".group-meta").textContent, /· \d+ 条 ·/);
+  });
+
+  await t.test("收到 notes.changed(kind=save) 广播后自动刷新，无需手动 F5", async () => {
+    const before = document.querySelectorAll(".note-card").length;
+    const countBefore = document.getElementById("note-count").textContent;
+    window.__aidnStore.set("note_live_1", {
+      id: "note_live_1",
+      schemaVersion: 2,
+      contentMarkdown: "实时新增：来自 content script 的笔记",
+      contentText: "",
+      contentHtml: "",
+      source: "ChatGPT",
+      sourceType: "chat",
+      conversationTitle: "实时性验证对话",
+      conversationUrl: "https://chatgpt.com/c/live-1",
+      metadata: {},
+      createdAt: new Date().toISOString(),
+    });
+    window.__aidnEmitChanged({ kind: "save" });
+    const t0 = Date.now();
+    while (document.querySelectorAll(".note-card").length !== before + 1) {
+      if (Date.now() - t0 > 3000) throw new Error("收到 save 广播后页面未自动刷新");
+      await delay(50);
+    }
+    assert.equal(document.getElementById("note-count").textContent, String(Number(countBefore) + 1));
+    assert.ok([...document.querySelectorAll(".note-card")].some((c) => c.textContent.includes("实时新增")));
+
+    // update 类广播（页面自身写想法等）不应触发整体重绘
+    const stable = document.querySelectorAll(".note-card").length;
+    window.__aidnEmitChanged({ kind: "update" });
+    await delay(300);
+    assert.equal(document.querySelectorAll(".note-card").length, stable);
+  });
+
+  await t.test("想法便利贴 ⌘/Ctrl+Enter 保存后即时上屏并落库", async () => {
+    const card = document.querySelector(".note-card");
+    card.querySelector(".note-thought-btn").click(); // 展开便利贴
+    const input = card.querySelector(".note-thought-input");
+    assert.ok(input, "便利贴输入框应存在");
+
+    input.value = "命令行净化的一个想法";
+    input.dispatchEvent(new window.Event("input", { bubbles: true }));
+    input.dispatchEvent(new window.KeyboardEvent("keydown", {
+      key: "Enter", metaKey: true, bubbles: true, cancelable: true,
+    }));
+
+    const t0 = Date.now();
+    while (![...card.querySelectorAll(".note-thought-text")].some(
+      (el) => el.textContent === "命令行净化的一个想法"
+    )) {
+      if (Date.now() - t0 > 3000) throw new Error("⌘+Enter 保存后想法未上屏");
+      await delay(50);
+    }
+    assert.ok(card.querySelector(".note-thought-btn").textContent.includes("想法 · 1"));
+    // 数据确实写入 store（notes.update 走通，而非仅本地渲染）
+    const saved = [...window.__aidnStore.values()].find((n) =>
+      (n.thoughts || []).some((x) => x.text === "命令行净化的一个想法"));
+    assert.ok(saved, "想法应已写入存储");
   });
 });

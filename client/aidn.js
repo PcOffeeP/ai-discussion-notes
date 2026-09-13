@@ -32,6 +32,23 @@
         await repo.delete(id);
         return true;
       },
+      // ---- 想法（便利贴） ----
+      async addThought(id, text) {
+        const thought = AIDN.note.createThought(text);
+        if (!thought.text) return null;
+        const note = (await repo.list()).find((n) => n.id === id);
+        const thoughts = [...(note && Array.isArray(note.thoughts) ? note.thoughts : []), thought];
+        await repo.update(id, { thoughts });
+        return thought;
+      },
+      async removeThought(id, thoughtId) {
+        const note = (await repo.list()).find((n) => n.id === id);
+        if (!note) return false;
+        const thoughts = (Array.isArray(note.thoughts) ? note.thoughts : [])
+          .filter((t) => t.id !== thoughtId);
+        await repo.update(id, { thoughts });
+        return true;
+      },
 
       // ---- 二级 API ----
       advanced: {

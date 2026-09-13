@@ -200,12 +200,116 @@
     return el;
   }
 
+  // ---- 想法便利贴（卡片右侧，按钮展开） ----
+  const stickyOpenIds = new Set(); // 会话内记住展开状态
+  function buildSticky(note, onChange) {
+    const aside = document.createElement("aside");
+    aside.className = "note-sticky";
+
+    const head = document.createElement("div");
+    head.className = "note-sticky-head";
+    const entries = document.createElement("div");
+    entries.className = "note-thoughts";
+
+    function renderHead() {
+      const n = (note.thoughts || []).length;
+      head.textContent = n > 0 ? `我的想法 · ${n}` : "我的想法";
+    }
+
+    function renderEntries() {
+      entries.innerHTML = "";
+      for (const t of note.thoughts || []) {
+        const item = document.createElement("div");
+        item.className = "note-thought";
+
+        const text = document.createElement("div");
+        text.className = "note-thought-text";
+        text.textContent = t.text;
+
+        const foot = document.createElement("div");
+        foot.className = "note-thought-foot";
+        const time = document.createElement("time");
+        time.textContent = relativeTime(t.createdAt);
+        time.title = absoluteTime(t.createdAt);
+        const del = document.createElement("button");
+        del.className = "note-thought-del";
+        del.textContent = "×";
+        del.title = "删除这条想法";
+        del.addEventListener("click", async () => {
+          await aidn.removeThought(note.id, t.id);
+          note.thoughts = (note.thoughts || []).filter((x) => x.id !== t.id);
+          renderHead();
+          renderEntries();
+          if (onChange) onChange();
+        });
+        foot.append(time, del);
+
+        item.append(text, foot);
+        entries.appendChild(item);
+      }
+    }
+
+    const input = document.createElement("textarea");
+    input.className = "note-thought-input";
+    input.placeholder = "你有什么想法…";
+    input.rows = 2;
+    input.setAttribute("aria-label", "添加想法");
+
+    function autogrow() {
+      input.style.height = "auto";
+      input.style.height = input.scrollHeight + "px";
+    }
+    input.addEventListener("input", autogrow);
+
+    async function save() {
+      const text = input.value.trim();
+      if (!text) return;
+      input.disabled = true;
+      try {
+        const t = await aidn.addThought(note.id, text);
+        if (t) {
+          note.thoughts = [...(note.thoughts || []), t];
+          input.value = "";
+          autogrow();
+          renderHead();
+          renderEntries();
+          if (onChange) onChange();
+          head.classList.add("flash");
+          setTimeout(() => head.classList.remove("flash"), 900);
+        }
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        save();
+      }
+    });
+    input.addEventListener("blur", () => { if (input.value.trim()) save(); });
+
+    const hint = document.createElement("div");
+    hint.className = "note-sticky-hint";
+    hint.textContent = "⌘/Ctrl + Enter 保存";
+
+    renderHead();
+    renderEntries();
+    aside.append(head, entries, input, hint);
+    return aside;
+  }
+
   function buildCard(note) {
     const li = document.createElement("article");
     li.className = "note-card";
 
+    // 左侧主列：内容 / 展开 / 时间；右侧：想法便利贴
+    const main = document.createElement("div");
+    main.className = "note-main";
+
     const content = buildContentEl(note);
-    li.appendChild(content);
+    main.appendChild(content);
 
     // 长笔记折叠：渲染后测量，超过阈值加截断态
     requestAnimationFrame(() => {
@@ -220,7 +324,7 @@
       const truncated = li.classList.toggle("truncated");
       expandBtn.textContent = truncated ? "展开全文" : "收起";
     });
-    li.appendChild(expandBtn);
+    main.appendChild(expandBtn);
 
     const meta = document.createElement("div");
     meta.className = "note-meta";
@@ -231,6 +335,26 @@
 
     const actions = document.createElement("div");
     actions.className = "note-actions";
+
+    // 想法按钮：展开/收起右侧便利贴；已有想法时常驻显示并带计数
+    const thoughtBtn = document.createElement("button");
+    thoughtBtn.className = "note-thought-btn";
+    function syncThoughtBtn() {
+      const n = (note.thoughts || []).length;
+      thoughtBtn.textContent = n > 0 ? `✎ 想法 · ${n}` : "✎ 想法";
+      li.classList.toggle("has-thoughts", n > 0);
+    }
+    thoughtBtn.addEventListener("click", () => {
+      const open = li.classList.toggle("sticky-open");
+      thoughtBtn.setAttribute("aria-expanded", String(open));
+      if (open) stickyOpenIds.add(note.id);
+      else stickyOpenIds.delete(note.id);
+      if (open) {
+        const input = li.querySelector(".note-thought-input");
+        if (input) input.focus();
+      }
+    });
+    syncThoughtBtn();
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "note-copy";
@@ -264,7 +388,8 @@
       if (rawViewIds.has(note.id)) rawViewIds.delete(note.id);
       else rawViewIds.add(note.id);
       li.classList.remove("truncated");
-      li.replaceChild(buildContentEl(note), li.querySelector(".note-content"));
+      const oldContent = li.querySelector(".note-content");
+      oldContent.parentNode.replaceChild(buildContentEl(note), oldContent);
       rawBtn.textContent = rawViewIds.has(note.id) ? "预览" : "Markdown";
       closeMenu();
     });
@@ -297,8 +422,13 @@
     });
 
     menuWrap.append(moreBtn, menu);
-    actions.append(copyBtn, menuWrap);
-    li.append(actions, meta);
+    actions.append(thoughtBtn, copyBtn, menuWrap);
+    main.appendChild(meta);
+    if (stickyOpenIds.has(note.id)) {
+      li.classList.add("sticky-open");
+      thoughtBtn.setAttribute("aria-expanded", "true");
+    }
+    li.append(actions, main, buildSticky(note, syncThoughtBtn));
     return li;
   }
 
@@ -373,6 +503,24 @@
     renderSidebar();
     syncSidebarActive();
     renderMain();
+  }
+
+  // ---- 其他上下文（content script / 右键菜单 / SW fallback）写入笔记后，
+  // service worker 会广播 notes.changed；这里防抖重取，打开中的页面无需手动刷新。
+  // 只响应 save/clear：update/delete 是页面自身操作（想法便利贴、删除），已就地更新 UI，
+  // 再整体重绘反而会打断输入焦点与保存动效。
+  let refreshTimer = null;
+  function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, 150);
+  }
+  if (window.chrome?.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (!msg || msg.__aidn !== true || msg.action !== "notes.changed") return false;
+      const kind = msg.payload && msg.payload.kind;
+      if (kind === "save" || kind === "clear") scheduleRefresh();
+      return false;
+    });
   }
 
   // ---- 搜索（关键词检索，防抖） ----
