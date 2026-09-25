@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feature/broadsheet-recall-system
 
 jobs:
   build-apk:
@@ -52,7 +51,7 @@ jobs:
 
       - name: Publish or Update GitHub Release
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/broadsheet-recall-system'
+        if: github.ref == 'refs/heads/main'
         with:
           tag_name: latest-mobile
           name: "最新移动端测试版 (Latest Mobile Build)"

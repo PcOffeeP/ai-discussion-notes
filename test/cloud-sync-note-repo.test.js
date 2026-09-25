@@ -106,3 +106,55 @@ test("cloudSyncNoteRepo: 云端增量双向同步与 LWW 合并", async () => {
   assert.equal(rNote.contentText, "远端新笔记");
   assert.equal(rNote.metadata.syncedAt, mockServerTime);
 });
+
+test("cloudSyncNoteRepo: 首次连接云端时全量推送已有笔记（即时先前已离线标记为非 dirty）且自动补全 /api/sync", async () => {
+  const { syncRepo, localRepo } = makeRepos();
+
+  // 本地新增笔记，并先前执行过单机离线同步（导致 dirty: false）
+  const note1 = AIDN.note.createNote({ id: "n_offline_1", contentText: "离线已标记笔记" });
+  await syncRepo.save(note1);
+  await syncRepo.sync(); // 离线同步
+
+  const listAfterOffline = await localRepo.list();
+  assert.equal(listAfterOffline[0].metadata.dirty, false);
+  assert.ok(listAfterOffline[0].metadata.syncedAt);
+
+  // 添加一条示例笔记，检验示例笔记是否被排除
+  const sampleNote = AIDN.note.createNote({ id: "note_sample_demo", contentText: "示例笔记" });
+  await syncRepo.save(sampleNote);
+
+  let targetUrl = "";
+  let sentPayload = null;
+  const mockFetch = async (url, options) => {
+    targetUrl = url;
+    sentPayload = JSON.parse(options.body);
+    return {
+      ok: true,
+      json: async () => ({
+        serverTime: "2026-09-25T13:00:00Z",
+        notes: [],
+        settings: { deepseekApiKey: "sk-synced-key" },
+      }),
+    };
+  };
+
+  // 首次连接云端，输入不带 /api/sync 的 Render 域名
+  const syncRes = await syncRepo.sync({
+    syncEndpoint: "https://my-app.onrender.com",
+    userToken: "sec_token",
+    settings: { deepseekApiKey: "sk-my-key" },
+    fetchOverride: mockFetch,
+  });
+
+  assert.equal(syncRes.ok, true);
+  // 校验 URL 是否自动补全为 /api/sync
+  assert.equal(targetUrl, "https://my-app.onrender.com/api/sync");
+  // 校验 lastSyncAt 是否为 null（请求远端全量）
+  assert.equal(sentPayload.lastSyncAt, null);
+  // 校验 payload 是否包含已离线标记的真实笔记，并过滤掉 sample 笔记
+  assert.equal(sentPayload.deltas.length, 1);
+  assert.equal(sentPayload.deltas[0].id, "n_offline_1");
+  assert.equal(sentPayload.settings.deepseekApiKey, "sk-my-key");
+  assert.equal(syncRes.settings.deepseekApiKey, "sk-synced-key");
+});
+

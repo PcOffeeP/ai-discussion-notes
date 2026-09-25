@@ -89,11 +89,48 @@
       },
       "sync.now": async (params) => {
         const settings = await getSettings();
+        const syncSettings = Object.assign(
+          {
+            deepseekApiKey: settings.deepseekApiKey || "",
+            deepseekBaseUrl: settings.deepseekBaseUrl || "https://api.deepseek.com/v1",
+            deepseekModel: settings.deepseekModel || "deepseek-chat",
+            updatedAt: settings.updatedAt || "",
+          },
+          params?.settings || {}
+        );
+
         if (typeof repo.sync === "function") {
-          return repo.sync({
+          const syncResult = await repo.sync({
             syncEndpoint: params?.syncEndpoint || settings.syncEndpoint,
             userToken: params?.userToken || settings.userToken,
+            settings: syncSettings,
+            forceFull: params?.forceFull,
           });
+
+          // 如果远端返回了 settings，且远端配置比本地更新或本地缺少 key，落回本地设置
+          if (syncResult && syncResult.settings) {
+            const remote = syncResult.settings;
+            const toPatch = {};
+            if (remote.deepseekApiKey && !settings.deepseekApiKey) {
+              toPatch.deepseekApiKey = remote.deepseekApiKey;
+            }
+            if (remote.deepseekBaseUrl && !settings.deepseekApiKey && remote.deepseekBaseUrl !== settings.deepseekBaseUrl) {
+              toPatch.deepseekBaseUrl = remote.deepseekBaseUrl;
+            }
+            if (remote.deepseekModel && !settings.deepseekApiKey && remote.deepseekModel !== settings.deepseekModel) {
+              toPatch.deepseekModel = remote.deepseekModel;
+            }
+            if (remote.updatedAt && settings.updatedAt && remote.updatedAt > settings.updatedAt) {
+              if (remote.deepseekApiKey) toPatch.deepseekApiKey = remote.deepseekApiKey;
+              if (remote.deepseekBaseUrl) toPatch.deepseekBaseUrl = remote.deepseekBaseUrl;
+              if (remote.deepseekModel) toPatch.deepseekModel = remote.deepseekModel;
+            }
+            if (Object.keys(toPatch).length > 0) {
+              await patchSettings(toPatch);
+            }
+          }
+
+          return syncResult;
         }
         return { ok: true, offline: true };
       },

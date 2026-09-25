@@ -11,9 +11,9 @@
     const SYNC_META_KEY = "aidn_sync_metadata";
 
     async function getSyncMeta() {
-      if (!kv) return { lastSyncAt: null };
+      if (!kv) return { lastSyncAt: null, lastCloudEndpoint: null, lastCloudSyncAt: null };
       const data = await kv.get(SYNC_META_KEY);
-      return data[SYNC_META_KEY] || { lastSyncAt: null };
+      return data[SYNC_META_KEY] || { lastSyncAt: null, lastCloudEndpoint: null, lastCloudSyncAt: null };
     }
 
     async function setSyncMeta(meta) {
@@ -36,8 +36,9 @@
       },
 
       async update(id, patch) {
-        // 更新时打上 dirty 待同步标记
+        // 更新时打上 dirty 待同步标记与 updatedAt
         const enrichedPatch = Object.assign({}, patch, {
+          updatedAt: patch.updatedAt || new Date().toISOString(),
           metadata: Object.assign({}, patch.metadata, { dirty: true }),
         });
         return localRepo.update(id, enrichedPatch);
@@ -52,20 +53,48 @@
       },
 
       // ---- 增量同步协议 (Delta Sync) ----
-      async sync({ syncEndpoint, userToken, settings, fetchOverride } = {}) {
-        const url = (syncEndpoint || "").trim();
+      async sync({ syncEndpoint, userToken, settings, forceFull, fetchOverride } = {}) {
+        let url = (syncEndpoint || "").trim();
         const token = (userToken || "").trim();
         const doFetch = fetchOverride || fetchCall;
 
+        if (url && !url.endsWith("/api/sync") && !url.includes("/api/")) {
+          // 自动补齐子路径，兼容用户直接填入服务基础域名 (如 https://xxx.onrender.com)
+          url = url.replace(/\/+$/, "") + "/api/sync";
+        }
+
         const all = await localRepo.list();
         const syncMeta = await getSyncMeta();
+        const isCloudSync = Boolean(url && doFetch);
 
-        // 提取本地未同步或被修改的增量 (dirty 或无 syncedAt)
-        const localDeltas = all.filter(
-          (n) => n.metadata?.dirty === true || !n.metadata?.syncedAt
-        );
+        const isSample = (n) => Boolean(n?.metadata?.isSample || (n?.id && String(n.id).startsWith("note_sample_")));
 
-        if (!url || !doFetch) {
+        let localDeltas = [];
+        let lastSyncAtForPayload = null;
+
+        if (isCloudSync) {
+          const isNewEndpoint = !syncMeta.lastCloudEndpoint || syncMeta.lastCloudEndpoint !== url || Boolean(forceFull);
+          if (isNewEndpoint) {
+            // 首次连接到此云端地址，或者是切换了新的服务器地址，或强制全量同步：
+            // 将所有本地真实笔记作为全量基线上传，并且向服务端请求全量数据（lastSyncAt 为 null）
+            localDeltas = all.filter((n) => !isSample(n));
+            lastSyncAtForPayload = null;
+          } else {
+            // 同一云端地址的后续增量同步：
+            // 提取本地 dirty 标记为 true 或尚无 syncedAt 的增量
+            localDeltas = all.filter(
+              (n) => !isSample(n) && (n.metadata?.dirty === true || !n.metadata?.syncedAt)
+            );
+            lastSyncAtForPayload = syncMeta.lastCloudSyncAt || syncMeta.lastSyncAt || null;
+          }
+        } else {
+          // 离线/单机模式：
+          localDeltas = all.filter(
+            (n) => n.metadata?.dirty === true || !n.metadata?.syncedAt
+          );
+        }
+
+        if (!isCloudSync) {
           // 离线/单机模式：本地打上模拟已同步标记
           const now = new Date().toISOString();
           let changed = 0;
@@ -74,7 +103,7 @@
             await localRepo.update(n.id, { metadata: n.metadata });
             changed++;
           }
-          await setSyncMeta({ lastSyncAt: now });
+          await setSyncMeta(Object.assign({}, syncMeta, { lastSyncAt: now }));
           return {
             ok: true,
             syncedCount: changed,
@@ -86,7 +115,7 @@
 
         const payload = {
           token,
-          lastSyncAt: syncMeta.lastSyncAt,
+          lastSyncAt: lastSyncAtForPayload,
           deltas: localDeltas,
           settings: settings || null,
         };
@@ -118,13 +147,15 @@
           await localRepo.update(n.id, { metadata: mergedMeta });
         }
 
-        // 2. 将远端更新合并进本地 (LWW 策略)
+        // 2. 将远端更新合并进本地 (LWW 策略，优先比对 updatedAt)
         let serverUpdatesCount = 0;
         const currentLocal = await localRepo.list();
         const localMap = new Map(currentLocal.map((n) => [n.id, n]));
 
         for (const sNote of serverNotes) {
           if (!sNote || !sNote.id) continue;
+          if (isSample(sNote)) continue;
+
           const localNote = localMap.get(sNote.id);
           if (!localNote) {
             // 远端新增，存入本地
@@ -134,9 +165,9 @@
             await localRepo.save(incoming);
             serverUpdatesCount++;
           } else {
-            // 远端修改，比较更新时间戳
-            const localTime = localNote.createdAt;
-            const remoteTime = sNote.createdAt;
+            // 远端修改，比较更新时间戳 (优先比对 updatedAt，其次比对 createdAt)
+            const localTime = localNote.updatedAt || localNote.createdAt || "";
+            const remoteTime = sNote.updatedAt || sNote.createdAt || "";
             if (remoteTime >= localTime) {
               const updated = Object.assign({}, localNote, sNote, {
                 metadata: Object.assign({}, localNote.metadata, sNote.metadata, {
@@ -150,7 +181,11 @@
           }
         }
 
-        await setSyncMeta({ lastSyncAt: serverTime });
+        await setSyncMeta({
+          lastSyncAt: serverTime,
+          lastCloudSyncAt: serverTime,
+          lastCloudEndpoint: url,
+        });
 
         return {
           ok: true,

@@ -743,7 +743,18 @@
         });
 
         if (res && res.ok) {
-          if (syncStatusMsg) syncStatusMsg.textContent = res.offline ? "已完成本地标记" : `同步完成 (+${res.serverUpdatesCount})`;
+          if (syncStatusMsg) {
+            syncStatusMsg.textContent = res.offline
+              ? "已完成本地标记"
+              : `同步成功 (推 ${res.syncedCount || 0} / 拉 +${res.serverUpdatesCount || 0})`;
+          }
+          const latestSettings = await aidn.advanced.settings?.get();
+          if (latestSettings) {
+            if (deepseekKeyInput && latestSettings.deepseekApiKey) deepseekKeyInput.value = latestSettings.deepseekApiKey;
+            if (deepseekUrlInput && latestSettings.deepseekBaseUrl) deepseekUrlInput.value = latestSettings.deepseekBaseUrl;
+            if (deepseekModelInput && latestSettings.deepseekModel) deepseekModelInput.value = latestSettings.deepseekModel;
+            syncDeepSeekStatus(latestSettings);
+          }
           await refresh();
         } else {
           if (syncStatusMsg) syncStatusMsg.textContent = "同步完成";

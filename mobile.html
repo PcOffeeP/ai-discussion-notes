@@ -556,6 +556,13 @@
             });
 
             if (res && res.ok) {
+              if (res.serverUpdatesCount > 0) {
+                const sampleIds = ["note_sample_1", "note_sample_2", "note_sample_3"];
+                for (const sid of sampleIds) {
+                  await repo.delete(sid).catch(() => {});
+                }
+              }
+
               currentNotes = await repo.list();
               storedCountEl.textContent = String(currentNotes.length);
 
@@ -623,8 +630,8 @@
 
       // 应用内检查更新与一键在线升级 (带精准版本号控制与比对)
       const buildInfo = window.__APP_BUILD_INFO__ || {
-        version: "0.4.1",
-        versionCode: 401,
+        version: "0.4.2",
+        versionCode: 402,
         commit: "dev",
         buildTime: "",
       };
@@ -755,6 +762,10 @@
                 if (mUrlInput && res.settings.deepseekBaseUrl) mUrlInput.value = res.settings.deepseekBaseUrl;
               }
               if (res && res.serverUpdatesCount > 0) {
+                const sampleIds = ["note_sample_1", "note_sample_2", "note_sample_3"];
+                for (const sid of sampleIds) {
+                  await repo.delete(sid).catch(() => {});
+                }
                 currentNotes = await repo.list();
                 storedCountEl.textContent = String(currentNotes.length);
                 shuffleIssue();

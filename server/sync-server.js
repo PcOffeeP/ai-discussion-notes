@@ -100,15 +100,15 @@ function createSyncServer(options = {}) {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;
 
-    // 健康检查
-    if (pathname === "/health" || pathname === "/") {
+    // 健康检查 (GET /health 或 GET /)
+    if ((pathname === "/health" || pathname === "/") && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ status: "ok", service: "aidn-sync-gateway", totalNotes: notesMap.size }));
       return;
     }
 
-    // 增量同步接口
-    if (pathname === "/api/sync" && req.method === "POST") {
+    // 增量同步接口 (POST /api/sync 或 POST /)
+    if ((pathname === "/api/sync" || pathname === "/") && req.method === "POST") {
       // 1. 校验 Token
       const authHeader = req.headers.authorization || "";
       const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
@@ -133,7 +133,7 @@ function createSyncServer(options = {}) {
       const { lastSyncAt, deltas = [], settings } = body;
       const serverTime = new Date().toISOString();
 
-      // 3. 将客户端上报的增量合入服务端 (LWW 策略)
+      // 3. 将客户端上报的增量合入服务端 (LWW 策略，优先比对 updatedAt)
       let incomingUpdated = 0;
       if (Array.isArray(deltas)) {
         for (const note of deltas) {
@@ -147,9 +147,9 @@ function createSyncServer(options = {}) {
             notesMap.set(note.id, clean);
             incomingUpdated++;
           } else {
-            // 已存在，比对时间戳
-            const existingTime = existing.createdAt || "";
-            const incomingTime = note.createdAt || "";
+            // 已存在，比对时间戳 (优先比对 updatedAt，其次比对 createdAt)
+            const existingTime = existing.updatedAt || existing.createdAt || "";
+            const incomingTime = note.updatedAt || note.createdAt || "";
             if (incomingTime >= existingTime) {
               const updated = Object.assign({}, existing, note, {
                 metadata: Object.assign({}, existing.metadata, note.metadata, {
@@ -173,11 +173,17 @@ function createSyncServer(options = {}) {
         const incomingTime = settings.updatedAt || "";
 
         if (incomingKey || incomingUrl || incomingModel) {
-          if (!sharedSettings.updatedAt || incomingTime >= sharedSettings.updatedAt) {
+          const isNewer = !sharedSettings.updatedAt || (incomingTime && incomingTime >= sharedSettings.updatedAt);
+          // 如果客户端没有提供有效 key，保留已有 key，绝不抹除已有的 API Key
+          const keyToSave = incomingKey || sharedSettings.deepseekApiKey;
+          const urlToSave = incomingUrl || sharedSettings.deepseekBaseUrl;
+          const modelToSave = incomingModel || sharedSettings.deepseekModel;
+
+          if (isNewer || (incomingKey && !sharedSettings.deepseekApiKey)) {
             sharedSettings = {
-              deepseekApiKey: incomingKey || sharedSettings.deepseekApiKey,
-              deepseekBaseUrl: incomingUrl || sharedSettings.deepseekBaseUrl,
-              deepseekModel: incomingModel || sharedSettings.deepseekModel,
+              deepseekApiKey: keyToSave,
+              deepseekBaseUrl: urlToSave,
+              deepseekModel: modelToSave,
               updatedAt: incomingTime || serverTime,
             };
             settingsUpdated = true;
@@ -231,6 +237,9 @@ function createSyncServer(options = {}) {
     },
     close() {
       return new Promise((resolve) => {
+        if (typeof server.closeAllConnections === "function") {
+          server.closeAllConnections();
+        }
         server.close(resolve);
       });
     },
