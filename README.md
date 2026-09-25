@@ -8,40 +8,50 @@
 
 > Save the best things you learn from AI.
 
-## 架构（RFC-001，v0.2 起）
+## 架构（RFC-001 ~ RFC-004，v0.4）
 
-六边形骨架 + 极简主路径外衣。核心是纯模块（零 `chrome.*` 依赖，Node 可测），
+六边形骨架 + 极简主路径外衣 + 经典中文大报（The Classic Broadsheet）。核心是纯模块（零 `chrome.*` 依赖，Node 可测），
 边界通过端口注入适配器。
 
 ```text
 DomSelectionSource(网页选区) ──┐
-LocalHttpSource(桌面Agent, 预留) ─┼→ core.pipeline(归一化→序列化) → NoteRepo(chrome.storage / 未来云)
-SiteProfile(ChatGPT/Kimi…) ──┘        ↑ 纯模块，Node fixture 可测
+LocalHttpSource(桌面Agent, 预留) ─┼→ core.pipeline(归一化→序列化) → NoteRepo(Local-First + CloudSync)
+SiteProfile(ChatGPT/Kimi…) ──┘        ↑ 纯模块，Node fixture 可测      │
+                                                                   ▼
+DeepSeek 认知编排 (RFC-003) ←───────────────────────────────────── 云端增量同步 (Delta Sync)
+├── 认知画像 (Cognitive Profile)
+└── 号外复习自测 (Broadsheet Recall: 头条推演 / 要闻辨析 / 微言快问)
 ```
 
 ```text
 core/                  # 纯模块（业务规则唯一拥有者）
 ├── ports.js           # 端口定义文档：NoteRepo / CaptureSource / KV
-├── note.js            # Note schema v2：createNote / migrate(v1→v2) / search
+├── note.js            # Note schema v3：createNote / migrate(v1/v2→v3) / search / thoughts
+├── group.js           # 会话与专栏聚类聚合纯函数
 ├── normalize.js       # 块级选区归一化（修复选区丢失 table/ul 外壳）
-├── html-to-markdown.js# HTML→Markdown（内含 Serializer 注册表，math 预留位）
-└── pipeline.js        # createPipeline({repo, serialize?}) → capture(RawCapture)
+├── html-to-markdown.js# HTML→Markdown 序列化
+├── pipeline.js        # createPipeline({repo, serialize?}) → capture(RawCapture)
+└── recall/            # [RFC-003] 复习与认知编排纯模块
+    ├── prompt-builder.js    # 双层 User Prompt 组装器
+    └── response-parser.js   # 号外 JSON 校验与解析器
 
-adapters/              # 薄适配器（薄到无可测）
+adapters/              # 薄适配器
 ├── chrome/kv.js                 # KV 端口：ChromeKV(生产) / MemoryKV(测试)
-├── chrome/storage-note-repo.js  # NoteRepo 生产实现 + 惰性迁移回写
+├── chrome/storage-note-repo.js  # 本地 NoteRepo
+├── chrome/cloud-sync-note-repo.js # [RFC-003] 云端增量同步适配器 (Delta Sync)
 ├── chrome/runtime-client.js     # NoteRepo 远程门面（吃掉消息协议）
 ├── chrome/runtime-server.js     # SW 侧消息分发（协议唯一拥有者）
+├── llm/deepseek-client.js       # [RFC-003] DeepSeek 认知编排客户端 (含启发式降级)
 └── sources/
-    ├── site-profiles.js         # 平台资料 = 纯数据（新平台只加一份数据）
+    ├── site-profiles.js         # 平台资料 = 纯数据
     └── dom-selection-source.js  # CaptureSource：选区采集 + 归一化
 
-client/aidn.js         # 主路径外衣：save() / all() / search() / remove() + advanced.*
+client/aidn.js         # 主路径外衣：save() / all() / search() / remove() / thoughts / recall / sync
 background/            # 装配层（组合端口与适配器，无业务规则）
 content/               # 纯 UI：选区监听、悬浮按钮、toast
-notes/                 # Notes 页（markdown-it + DOMPurify 渲染）
-test/                  # Node 边界测试：npm test
-docs/RFC-001-capture-core.md  # 本次重构的完整设计依据
+notes/                 # [RFC-004]《AI 讨论纪事报》：经典多栏大报版芯 + 头版号外自测
+test/                  # 边界自动化测试：npm test
+docs/                  # RFC 设计架构全套方案 (RFC-001 ~ RFC-004)
 ```
 
 ## 主路径 API
@@ -53,18 +63,35 @@ await aidn.save()            // 当前选区 → Note | null
 await aidn.all()             // Note[]，倒序
 await aidn.search(query)     // Note[]
 await aidn.remove(id)        // boolean
-// 二级：aidn.advanced.saveRaw / registerSiteProfile / registerSerializer /
-//       exportAll / clearAll / settings.get / settings.patch
+await aidn.addThought(id, t) // Thought
+await aidn.recall.generateIssue({ notes, targetNoteId }) // IssuePayload
+await aidn.recall.getProfile(notes)                      // CognitiveProfile
+await aidn.sync.syncNow()                                // Delta Sync
 ```
 
-## Note schema v2
+## Note schema v3 (RFC-003)
 
 ```js
-{ id, schemaVersion: 2,
-  contentMarkdown,   // 主展示（Markdown 原文）
-  contentText,       // 搜索索引
-  contentHtml,       // 原始 HTML 兜底（序列化失败不丢信息）
-  source, sourceType, conversationTitle, conversationUrl, metadata, createdAt }
+{
+  id: string,
+  schemaVersion: 3,
+  contentMarkdown: string,   // 主展示（Markdown 原文）
+  contentText: string,       // 搜索索引
+  contentHtml: string,       // 原始 HTML 兜底
+  source: string,
+  sourceType: string,
+  conversationTitle: string,
+  conversationUrl: string,
+  thoughts: Array<{ id, text, createdAt }>, // 想法便利贴 / 随感批注
+  metadata: {
+    host?: string,
+    dirty?: boolean,         // 本地待推送标记
+    syncedAt?: string,       // 云端同步时间戳
+    lastRecalledAt?: string, // 最近一次出题复习时间
+    recallCount?: number     // 复习唤醒次数
+  },
+  createdAt: string
+}
 ```
 
 v1 数据（单 `content` 字段）在 `repo.list()` 时惰性迁移并回写，用户无感知。
