@@ -27,6 +27,10 @@
       // 设置
       getSettings: () => call("settings.get"),
       patchSettings: (patch) => call("settings.patch", patch),
+      // 复习编排与同步
+      getRecallIssue: (params) => call("recall.issue", params),
+      getCognitiveProfile: (params) => call("recall.profile", params),
+      syncNow: (params) => call("sync.now", params),
     };
   }
 

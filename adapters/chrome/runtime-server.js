@@ -3,7 +3,14 @@
 (function (global) {
   const AIDN = (global.AIDN = global.AIDN || {});
   const SETTINGS_KEY = "settings";
-  const DEFAULT_SETTINGS = { captureButtonEnabled: true };
+  const DEFAULT_SETTINGS = {
+    captureButtonEnabled: true,
+    deepseekApiKey: "",
+    deepseekBaseUrl: "https://api.deepseek.com/v1",
+    deepseekModel: "deepseek-chat",
+    syncEndpoint: "",
+    userToken: "",
+  };
 
   function createRuntimeNoteServer({ repo, kv, runtime }) {
     const rt = runtime || chrome.runtime;
@@ -45,6 +52,40 @@
       "notes.clear": () => notifyingRepo.clear(),
       "settings.get": () => getSettings(),
       "settings.patch": (patch) => patchSettings(patch),
+      "recall.issue": async (params) => {
+        const settings = await getSettings();
+        if (AIDN.llm?.createDeepSeekClient) {
+          const client = AIDN.llm.createDeepSeekClient({
+            apiKey: settings.deepseekApiKey,
+            baseUrl: settings.deepseekBaseUrl,
+            model: settings.deepseekModel,
+          });
+          return client.generateRecallIssue(params);
+        }
+        throw new Error("DeepSeek 客户端未加载");
+      },
+      "recall.profile": async (params) => {
+        const settings = await getSettings();
+        if (AIDN.llm?.createDeepSeekClient) {
+          const client = AIDN.llm.createDeepSeekClient({
+            apiKey: settings.deepseekApiKey,
+            baseUrl: settings.deepseekBaseUrl,
+            model: settings.deepseekModel,
+          });
+          return client.generateCognitiveProfile(params);
+        }
+        throw new Error("DeepSeek 客户端未加载");
+      },
+      "sync.now": async (params) => {
+        const settings = await getSettings();
+        if (typeof repo.sync === "function") {
+          return repo.sync({
+            syncEndpoint: params?.syncEndpoint || settings.syncEndpoint,
+            userToken: params?.userToken || settings.userToken,
+          });
+        }
+        return { ok: true, offline: true };
+      },
     };
 
     rt.onMessage.addListener((msg, _sender, sendResponse) => {

@@ -3,16 +3,21 @@ importScripts(
   "../core/note.js",
   "../core/html-to-markdown.js",
   "../core/pipeline.js",
+  "../core/recall/prompt-builder.js",
+  "../core/recall/response-parser.js",
   "../client/aidn.js",
   "../adapters/chrome/kv.js",
   "../adapters/chrome/storage-note-repo.js",
+  "../adapters/chrome/cloud-sync-note-repo.js",
   "../adapters/chrome/runtime-server.js",
+  "../adapters/llm/deepseek-client.js",
   "../adapters/sources/site-profiles.js"
 );
 
 const AIDN = self.AIDN;
 const kv = AIDN.createChromeKV();
-const repo = AIDN.createStorageNoteRepo(kv);
+const storageRepo = AIDN.createStorageNoteRepo(kv);
+const repo = AIDN.createCloudSyncNoteRepo({ localRepo: storageRepo, kv });
 const server = AIDN.createRuntimeNoteServer({ repo, kv });
 const aidn = AIDN.createClient({ repo });
 

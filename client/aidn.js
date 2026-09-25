@@ -50,6 +50,35 @@
         return true;
       },
 
+      // ---- 认知复习编排 (RFC-003) ----
+      recall: {
+        async generateIssue(params) {
+          if (repo.getRecallIssue) {
+            return repo.getRecallIssue(params);
+          }
+          const client = AIDN.llm?.createDeepSeekClient ? AIDN.llm.createDeepSeekClient() : null;
+          if (client) return client.generateRecallIssue(params);
+          return null;
+        },
+        async getProfile(recentNotes) {
+          if (repo.getCognitiveProfile) {
+            return repo.getCognitiveProfile({ recentNotes });
+          }
+          const client = AIDN.llm?.createDeepSeekClient ? AIDN.llm.createDeepSeekClient() : null;
+          if (client) return client.generateCognitiveProfile({ recentNotes });
+          return null;
+        },
+      },
+
+      // ---- 增量同步 (RFC-003) ----
+      sync: {
+        async syncNow(params) {
+          if (repo.syncNow) return repo.syncNow(params);
+          if (typeof repo.sync === "function") return repo.sync(params);
+          return { ok: true, offline: true };
+        },
+      },
+
       // ---- 二级 API ----
       advanced: {
         // 非 DOM 来源（桌面 Agent / 右键菜单纯文本）走这里
