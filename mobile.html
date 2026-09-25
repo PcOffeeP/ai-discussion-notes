@@ -526,10 +526,34 @@
 
           if (mSyncStatusMsg) mSyncStatusMsg.textContent = "同步中…";
           try {
-            const res = await repo.sync({ syncEndpoint: endpoint, userToken: token });
+            const localKey = localStorage.getItem("aidn_m_deepseek_key") || "";
+            const localUrl = localStorage.getItem("aidn_m_deepseek_url") || "";
+            const localSettings = localKey ? {
+              deepseekApiKey: localKey,
+              deepseekBaseUrl: localUrl,
+            } : null;
+
+            const res = await repo.sync({
+              syncEndpoint: endpoint,
+              userToken: token,
+              settings: localSettings,
+            });
+
             if (res && res.ok) {
               currentNotes = await repo.list();
               storedCountEl.textContent = String(currentNotes.length);
+
+              // 自动将云端同步的 DeepSeek 配置落地到手机本地
+              if (res.settings && res.settings.deepseekApiKey) {
+                localStorage.setItem("aidn_m_deepseek_key", res.settings.deepseekApiKey);
+                if (res.settings.deepseekBaseUrl) {
+                  localStorage.setItem("aidn_m_deepseek_url", res.settings.deepseekBaseUrl);
+                }
+                syncStatusUI();
+                if (mKeyInput) mKeyInput.value = res.settings.deepseekApiKey;
+                if (mUrlInput && res.settings.deepseekBaseUrl) mUrlInput.value = res.settings.deepseekBaseUrl;
+              }
+
               if (mSyncStatusMsg) {
                 mSyncStatusMsg.textContent = res.offline
                   ? "已本地标记"
@@ -599,8 +623,24 @@
         const endpoint = localStorage.getItem("aidn_m_sync_endpoint") || "";
         const token = localStorage.getItem("aidn_m_sync_token") || "";
         if (endpoint) {
-          repo.sync({ syncEndpoint: endpoint, userToken: token })
+          const localKey = localStorage.getItem("aidn_m_deepseek_key") || "";
+          const localUrl = localStorage.getItem("aidn_m_deepseek_url") || "";
+          const localSettings = localKey ? {
+            deepseekApiKey: localKey,
+            deepseekBaseUrl: localUrl,
+          } : null;
+
+          repo.sync({ syncEndpoint: endpoint, userToken: token, settings: localSettings })
             .then(async (res) => {
+              if (res && res.settings && res.settings.deepseekApiKey) {
+                localStorage.setItem("aidn_m_deepseek_key", res.settings.deepseekApiKey);
+                if (res.settings.deepseekBaseUrl) {
+                  localStorage.setItem("aidn_m_deepseek_url", res.settings.deepseekBaseUrl);
+                }
+                syncStatusUI();
+                if (mKeyInput) mKeyInput.value = res.settings.deepseekApiKey;
+                if (mUrlInput && res.settings.deepseekBaseUrl) mUrlInput.value = res.settings.deepseekBaseUrl;
+              }
               if (res && res.serverUpdatesCount > 0) {
                 currentNotes = await repo.list();
                 storedCountEl.textContent = String(currentNotes.length);

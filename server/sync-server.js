@@ -17,14 +17,27 @@ function createSyncServer(options = {}) {
 
   // 内存缓存 + 文件持久化
   let notesMap = new Map();
+  let sharedSettings = {
+    deepseekApiKey: "",
+    deepseekBaseUrl: "https://api.deepseek.com/v1",
+    deepseekModel: "deepseek-chat",
+    updatedAt: "",
+  };
 
   function loadData() {
     if (fs.existsSync(storageFile)) {
       try {
         const raw = fs.readFileSync(storageFile, "utf-8");
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) {
-          notesMap = new Map(list.map((n) => [n.id, n]));
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          notesMap = new Map(parsed.map((n) => [n.id, n]));
+        } else if (parsed && typeof parsed === "object") {
+          if (Array.isArray(parsed.notes)) {
+            notesMap = new Map(parsed.notes.map((n) => [n.id, n]));
+          }
+          if (parsed.settings) {
+            sharedSettings = Object.assign({}, sharedSettings, parsed.settings);
+          }
         }
       } catch (err) {
         console.error("[SyncServer] 读取持久化文件失败，初始化空存储:", err.message);
@@ -35,8 +48,11 @@ function createSyncServer(options = {}) {
 
   function persistData() {
     try {
-      const list = Array.from(notesMap.values());
-      fs.writeFileSync(storageFile, JSON.stringify(list, null, 2), "utf-8");
+      const payload = {
+        notes: Array.from(notesMap.values()),
+        settings: sharedSettings,
+      };
+      fs.writeFileSync(storageFile, JSON.stringify(payload, null, 2), "utf-8");
     } catch (err) {
       console.error("[SyncServer] 写入持久化文件失败:", err.message);
     }
@@ -114,7 +130,7 @@ function createSyncServer(options = {}) {
         return;
       }
 
-      const { lastSyncAt, deltas = [] } = body;
+      const { lastSyncAt, deltas = [], settings } = body;
       const serverTime = new Date().toISOString();
 
       // 3. 将客户端上报的增量合入服务端 (LWW 策略)
@@ -146,12 +162,34 @@ function createSyncServer(options = {}) {
             }
           }
         }
-        if (incomingUpdated > 0) {
-          persistData();
+      }
+
+      // 4. 同步共享配置（如 DeepSeek API Key，以最新更新时间戳为准）
+      let settingsUpdated = false;
+      if (settings && typeof settings === "object") {
+        const incomingKey = (settings.deepseekApiKey || "").trim();
+        const incomingUrl = (settings.deepseekBaseUrl || "").trim();
+        const incomingModel = (settings.deepseekModel || "").trim();
+        const incomingTime = settings.updatedAt || "";
+
+        if (incomingKey || incomingUrl || incomingModel) {
+          if (!sharedSettings.updatedAt || incomingTime >= sharedSettings.updatedAt) {
+            sharedSettings = {
+              deepseekApiKey: incomingKey || sharedSettings.deepseekApiKey,
+              deepseekBaseUrl: incomingUrl || sharedSettings.deepseekBaseUrl,
+              deepseekModel: incomingModel || sharedSettings.deepseekModel,
+              updatedAt: incomingTime || serverTime,
+            };
+            settingsUpdated = true;
+          }
         }
       }
 
-      // 4. 收集自 lastSyncAt 之后在服务端有变更的所有笔记下发给客户端
+      if (incomingUpdated > 0 || settingsUpdated) {
+        persistData();
+      }
+
+      // 5. 收集自 lastSyncAt 之后在服务端有变更的所有笔记下发给客户端
       const allNotes = Array.from(notesMap.values());
       let notesToReturn = allNotes;
       if (lastSyncAt) {
@@ -170,6 +208,7 @@ function createSyncServer(options = {}) {
           serverTime,
           serverReceived: incomingUpdated,
           notes: notesToReturn,
+          settings: sharedSettings,
         })
       );
       return;
@@ -197,6 +236,9 @@ function createSyncServer(options = {}) {
     },
     getNotes() {
       return Array.from(notesMap.values());
+    },
+    getSettings() {
+      return Object.assign({}, sharedSettings);
     },
   };
 }

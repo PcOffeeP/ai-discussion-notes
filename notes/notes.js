@@ -724,8 +724,24 @@
       try {
         const endpoint = syncEndpointInput?.value.trim() || "";
         const token = syncTokenInput?.value.trim() || "";
+        const key = deepseekKeyInput?.value.trim() || "";
+        const baseUrl = deepseekUrlInput?.value.trim() || "";
+        const model = deepseekModelInput?.value.trim() || "";
         await saveDeepSeekSettings();
-        const res = await aidn.sync.syncNow({ syncEndpoint: endpoint, userToken: token });
+
+        const currentSettings = {
+          deepseekApiKey: key,
+          deepseekBaseUrl: baseUrl,
+          deepseekModel: model,
+          updatedAt: new Date().toISOString(),
+        };
+
+        const res = await aidn.sync.syncNow({
+          syncEndpoint: endpoint,
+          userToken: token,
+          settings: currentSettings,
+        });
+
         if (res && res.ok) {
           if (syncStatusMsg) syncStatusMsg.textContent = res.offline ? "已完成本地标记" : `同步完成 (+${res.serverUpdatesCount})`;
           await refresh();

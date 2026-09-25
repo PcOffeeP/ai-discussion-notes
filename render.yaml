@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aidn-cloud-sync
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server/sync-server.js
+    envVars:
+      - key: SYNC_SECRET_TOKEN
+        generateValue: true
+      - key: PORT
+        value: 10000

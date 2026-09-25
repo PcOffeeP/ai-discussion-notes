@@ -134,3 +134,58 @@ test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与
     if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
   }
 });
+
+test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到云端并在手机端拉取", async () => {
+  const tmpFile = path.resolve(__dirname, `../data/test-sync-settings-${Date.now()}.json`);
+  const secretToken = "my-secret-settings-sync";
+  const serverInstance = createSyncServer({
+    secretToken,
+    storageFile: tmpFile,
+  });
+  const port = await serverInstance.listen(0);
+  const syncEndpoint = `http://127.0.0.1:${port}/api/sync`;
+
+  try {
+    const kvDesktop = AIDN.createMemoryKV();
+    const repoDesktop = AIDN.createCloudSyncNoteRepo({
+      localRepo: AIDN.createStorageNoteRepo(kvDesktop),
+      kv: kvDesktop,
+    });
+
+    const kvMobile = AIDN.createMemoryKV();
+    const repoMobile = AIDN.createCloudSyncNoteRepo({
+      localRepo: AIDN.createStorageNoteRepo(kvMobile),
+      kv: kvMobile,
+    });
+
+    // 1. 电脑端同步，同时附带 DeepSeek 配置
+    const desktopSyncRes = await repoDesktop.sync({
+      syncEndpoint,
+      userToken: secretToken,
+      settings: {
+        deepseekApiKey: "sk-test-secret-123456",
+        deepseekBaseUrl: "https://api.deepseek.com/v1",
+        deepseekModel: "deepseek-chat",
+        updatedAt: new Date().toISOString(),
+      },
+    });
+    assert.equal(desktopSyncRes.ok, true);
+
+    // 服务端应已持有该配置
+    assert.equal(serverInstance.getSettings().deepseekApiKey, "sk-test-secret-123456");
+
+    // 2. 手机端初次同步（未传 key），应自动接收到服务端下发的 key
+    const mobileSyncRes = await repoMobile.sync({
+      syncEndpoint,
+      userToken: secretToken,
+      settings: null,
+    });
+    assert.equal(mobileSyncRes.ok, true);
+    assert.ok(mobileSyncRes.settings);
+    assert.equal(mobileSyncRes.settings.deepseekApiKey, "sk-test-secret-123456");
+    assert.equal(mobileSyncRes.settings.deepseekBaseUrl, "https://api.deepseek.com/v1");
+  } finally {
+    await serverInstance.close();
+    if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+  }
+});

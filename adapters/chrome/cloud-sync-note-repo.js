@@ -52,7 +52,7 @@
       },
 
       // ---- 增量同步协议 (Delta Sync) ----
-      async sync({ syncEndpoint, userToken, fetchOverride } = {}) {
+      async sync({ syncEndpoint, userToken, settings, fetchOverride } = {}) {
         const url = (syncEndpoint || "").trim();
         const token = (userToken || "").trim();
         const doFetch = fetchOverride || fetchCall;
@@ -88,6 +88,7 @@
           token,
           lastSyncAt: syncMeta.lastSyncAt,
           deltas: localDeltas,
+          settings: settings || null,
         };
 
         const resp = await doFetch(url, {
@@ -156,6 +157,7 @@
           syncedCount: localDeltas.length,
           serverUpdatesCount,
           timestamp: serverTime,
+          settings: resData.settings || null,
         };
       },
     };
