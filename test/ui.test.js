@@ -70,6 +70,47 @@ function buildHarnessHtml() {
             else if (msg.action === "notes.clear") { store.clear(); cb({ ok: true, data: true }); }
             else if (msg.action === "settings.get") cb({ ok: true, data: { captureButtonEnabled: true } });
             else if (msg.action === "settings.patch") cb({ ok: true, data: msg.payload });
+            else if (msg.action === "recall.issue") {
+              const notes = msg.payload.notes || [...store.values()];
+              const targetNote = notes[0] || {};
+              cb({
+                ok: true,
+                data: {
+                  issueId: "issue_harness_01",
+                  seriesName: targetNote.conversationTitle || "测试专栏",
+                  leadSource: (targetNote.source || "AI") + " · 刚刚",
+                  q1: {
+                    title: "论递归与迭代的本质区别与设计权衡？",
+                    sub: "算法与认知模型",
+                    clue: "关注调用栈与状态机的状态存储位置",
+                    anchor: "递归的核心是信任基底状态与因果归纳",
+                    targetNoteId: targetNote.id || "note_h_1",
+                  },
+                  q2: {
+                    title: "尾递归优化与普通递归有何区别？",
+                    body: "尾递归无需额外保留外层调用帧",
+                  },
+                  q3: {
+                    title: "深层递归导致爆栈，应如何改造？",
+                    body: "改用显示栈循环迭代或蹦床函数",
+                  },
+                },
+              });
+            }
+            else if (msg.action === "recall.profile") {
+              cb({
+                ok: true,
+                data: {
+                  updatedAt: new Date().toISOString(),
+                  activeTopics: ["递归算法", "系统架构"],
+                  recentShift: "深入探索状态机与函数式递归",
+                  dormantTopics: ["CSS"],
+                },
+              });
+            }
+            else if (msg.action === "sync.now") {
+              cb({ ok: true, data: { ok: true, syncedCount: 0, serverUpdatesCount: 0, offline: true } });
+            }
             else cb({ ok: false, error: "unknown action" });
           }, 10);
         },
@@ -317,5 +358,95 @@ test("notes 页面 UI 冒烟", async (t) => {
     const saved = [...window.__aidnStore.values()].find((n) =>
       (n.thoughts || []).some((x) => x.text === "命令行净化的一个想法"));
     assert.ok(saved, "想法应已写入存储");
+  });
+
+  await t.test("百年大报报头、认知雷达与 DeepSeek 状态展示 (RFC-004)", async () => {
+    // 报头总篇数与版面
+    const volEl = document.getElementById("masthead-vol");
+    assert.ok(volEl && volEl.textContent.includes("总第"));
+    assert.ok(document.querySelector(".broadsheet-masthead .masthead-title"));
+
+    // DeepSeek 状态标签
+    const statusEl = document.getElementById("deepseek-status");
+    assert.ok(statusEl && statusEl.textContent.includes("DEEPSEEK"));
+
+    // 认知雷达
+    const radar = document.getElementById("cognitive-radar");
+    assert.ok(radar);
+    await delay(100);
+    const tags = document.querySelectorAll("#radar-topics .radar-tag");
+    assert.ok(tags.length > 0, "认知雷达应有主题标签");
+  });
+
+  await t.test("头版号外自测弹窗与防剧透状态机交互 (RFC-004)", async () => {
+    const openBtn = document.getElementById("open-recall-btn");
+    const modal = document.getElementById("recall-modal");
+    const overlay = document.getElementById("recall-overlay");
+    const closeBtn = document.getElementById("recall-close-btn");
+
+    assert.ok(modal.classList.contains("hidden"));
+    openBtn.click();
+    assert.ok(!modal.classList.contains("hidden"));
+    assert.ok(!overlay.classList.contains("hidden"));
+
+    await delay(100);
+
+    // 1. 验证默认状态：思考线索折叠隐藏 (ClueHidden)
+    const clueBtn = document.getElementById("recall-clue-btn");
+    const clueBox = document.getElementById("recall-clue-box");
+    assert.ok(clueBox.classList.contains("hidden"));
+    assert.ok(clueBtn.textContent.includes("研读思考线索"));
+
+    // 点击展开线索 (ClueVisible)
+    clueBtn.click();
+    assert.ok(!clueBox.classList.contains("hidden"));
+    assert.ok(clueBtn.textContent.includes("隐去思考线索"));
+    assert.ok(document.getElementById("recall-clue-text").textContent.length > 0);
+
+    // 2. 验证原文对照折叠 (Folded)
+    const unfoldBtn = document.getElementById("recall-unfold-btn");
+    const originalBox = document.getElementById("recall-original-box");
+    assert.ok(originalBox.classList.contains("hidden"));
+
+    // 点击撕折展开原文 (Unfolded)
+    unfoldBtn.click();
+    assert.ok(!originalBox.classList.contains("hidden"));
+    assert.ok(unfoldBtn.textContent.includes("收拢号外原文"));
+    assert.ok(document.getElementById("recall-anchor-text").textContent.length > 0);
+
+    // 3. 栏目二 (q2) 概念辨析展开
+    const q2Toggle = document.getElementById("recall-q2-toggle");
+    const q2Body = document.getElementById("recall-q2-body");
+    assert.ok(q2Body.classList.contains("hidden"));
+    q2Toggle.click();
+    assert.ok(!q2Body.classList.contains("hidden"));
+
+    // 4. 栏目三 (q3) 微言快答揭晓
+    const q3Toggle = document.getElementById("recall-q3-toggle");
+    const q3Body = document.getElementById("recall-q3-body");
+    assert.ok(q3Body.classList.contains("hidden"));
+    q3Toggle.click();
+    assert.ok(!q3Body.classList.contains("hidden"));
+
+    // 5. 随手反思批注 (Thought Box)
+    const thoughtInput = document.getElementById("recall-thought-input");
+    const thoughtSubmit = document.getElementById("recall-thought-submit");
+    thoughtInput.value = "号外自测唤醒的新反思";
+    thoughtSubmit.click();
+    await delay(50);
+    assert.equal(thoughtInput.value, "");
+    assert.ok(document.getElementById("recall-thought-hint").textContent.includes("已沉淀"));
+
+    // 6. 换一批 (Shuffle) 重置状态机
+    const shuffleBtn = document.getElementById("recall-shuffle-btn");
+    shuffleBtn.click();
+    await delay(50);
+    assert.ok(clueBox.classList.contains("hidden"), "换版后线索应重置为折叠");
+    assert.ok(originalBox.classList.contains("hidden"), "换版后原文应重置为折叠");
+
+    // 7. 关闭号外
+    closeBtn.click();
+    assert.ok(modal.classList.contains("hidden"));
+    assert.ok(overlay.classList.contains("hidden"));
   });
 });

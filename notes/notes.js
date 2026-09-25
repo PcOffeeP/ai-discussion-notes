@@ -15,6 +15,52 @@
   const countAll = document.getElementById("count-all");
   const sideSources = document.getElementById("side-sources");
   const sideConversations = document.getElementById("side-conversations");
+  const mastheadVolEl = document.getElementById("masthead-vol");
+  const deepseekStatusEl = document.getElementById("deepseek-status");
+  const openRecallBtn = document.getElementById("open-recall-btn");
+
+  const radarTopicsEl = document.getElementById("radar-topics");
+  const radarShiftEl = document.getElementById("radar-shift");
+  const radarTimeEl = document.getElementById("radar-time");
+  const refreshRadarBtn = document.getElementById("refresh-radar-btn");
+
+  const deepseekKeyInput = document.getElementById("deepseek-key-input");
+  const deepseekUrlInput = document.getElementById("deepseek-url-input");
+  const deepseekModelInput = document.getElementById("deepseek-model-input");
+  const syncEndpointInput = document.getElementById("sync-endpoint-input");
+  const syncTokenInput = document.getElementById("sync-token-input");
+  const syncNowBtn = document.getElementById("sync-now-btn");
+  const syncStatusMsg = document.getElementById("sync-status-msg");
+
+  const recallOverlay = document.getElementById("recall-overlay");
+  const recallModal = document.getElementById("recall-modal");
+  const recallCloseBtn = document.getElementById("recall-close-btn");
+  const recallShuffleBtn = document.getElementById("recall-shuffle-btn");
+
+  const recallLeadSource = document.getElementById("recall-lead-source");
+  const recallQ1Title = document.getElementById("recall-q1-title");
+  const recallQ1Sub = document.getElementById("recall-q1-sub");
+  const recallClueBtn = document.getElementById("recall-clue-btn");
+  const recallClueBox = document.getElementById("recall-clue-box");
+  const recallClueText = document.getElementById("recall-clue-text");
+  const recallUnfoldBtn = document.getElementById("recall-unfold-btn");
+  const recallOriginalBox = document.getElementById("recall-original-box");
+  const recallOriginalText = document.getElementById("recall-original-text");
+  const recallAnchorText = document.getElementById("recall-anchor-text");
+
+  const recallQ2Title = document.getElementById("recall-q2-title");
+  const recallQ2Toggle = document.getElementById("recall-q2-toggle");
+  const recallQ2Body = document.getElementById("recall-q2-body");
+  const recallQ2Text = document.getElementById("recall-q2-text");
+
+  const recallQ3Title = document.getElementById("recall-q3-title");
+  const recallQ3Toggle = document.getElementById("recall-q3-toggle");
+  const recallQ3Body = document.getElementById("recall-q3-body");
+  const recallQ3Text = document.getElementById("recall-q3-text");
+
+  const recallThoughtInput = document.getElementById("recall-thought-input");
+  const recallThoughtSubmit = document.getElementById("recall-thought-submit");
+  const recallThoughtHint = document.getElementById("recall-thought-hint");
 
   // ---- 状态 ----
   let allNotes = [];           // 全量（搜索前的基底）
@@ -404,7 +450,15 @@
       await refresh();
     });
 
-    menu.append(rawBtn, delBtn);
+    const recallItem = document.createElement("button");
+    recallItem.setAttribute("role", "menuitem");
+    recallItem.textContent = "印制号外自测";
+    recallItem.addEventListener("click", () => {
+      closeMenu();
+      openRecallModal(note.id);
+    });
+
+    menu.append(rawBtn, delBtn, recallItem);
 
     function closeMenu() {
       menu.classList.add("hidden");
@@ -500,15 +554,47 @@
   async function refresh() {
     allNotes = await aidn.all(); // 已按 createdAt 倒序
     noteCountEl.textContent = String(allNotes.length);
+    if (mastheadVolEl) mastheadVolEl.textContent = `总第 ${allNotes.length} 篇`;
     renderSidebar();
     syncSidebarActive();
     renderMain();
+    updateCognitiveRadar();
+  }
+
+  // ---- 认知雷达提炼 (RFC-004) ----
+  let radarBusy = false;
+  async function updateCognitiveRadar() {
+    if (!radarTopicsEl || radarBusy) return;
+    radarBusy = true;
+    try {
+      const profile = await aidn.recall.getProfile(allNotes.slice(0, 8));
+      if (profile && Array.isArray(profile.activeTopics) && profile.activeTopics.length > 0) {
+        radarTopicsEl.innerHTML = "";
+        profile.activeTopics.forEach((t) => {
+          const span = document.createElement("span");
+          span.className = "radar-tag";
+          span.textContent = t;
+          radarTopicsEl.appendChild(span);
+        });
+      }
+      if (profile && profile.recentShift && radarShiftEl) {
+        radarShiftEl.textContent = profile.recentShift;
+      }
+      if (radarTimeEl) {
+        radarTimeEl.textContent = "画像提炼就绪";
+      }
+    } catch (_) {
+      // 容错降级
+    } finally {
+      radarBusy = false;
+    }
+  }
+  if (refreshRadarBtn) {
+    refreshRadarBtn.addEventListener("click", () => updateCognitiveRadar());
   }
 
   // ---- 其他上下文（content script / 右键菜单 / SW fallback）写入笔记后，
   // service worker 会广播 notes.changed；这里防抖重取，打开中的页面无需手动刷新。
-  // 只响应 save/clear：update/delete 是页面自身操作（想法便利贴、删除），已就地更新 UI，
-  // 再整体重绘反而会打断输入焦点与保存动效。
   let refreshTimer = null;
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
@@ -534,9 +620,10 @@
     }, 120);
   });
 
-  // ---- 键盘：Esc 清空搜索 / 关闭 Settings ----
+  // ---- 键盘：Esc 清空搜索 / 关闭 Modal / 关闭 Settings ----
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
+    if (recallModal && !recallModal.classList.contains("hidden")) { closeRecallModal(); return; }
     if (!panel.classList.contains("hidden")) { closeSettings(); return; }
     if (searchEl.value) { searchEl.value = ""; query = ""; renderSidebar(); renderMain(); }
   });
@@ -549,6 +636,49 @@
   document.getElementById("settings-btn").addEventListener("click", openSettings);
   document.getElementById("settings-close").addEventListener("click", closeSettings);
   overlay.addEventListener("click", closeSettings);
+
+  function syncDeepSeekStatus(settings) {
+    if (!deepseekStatusEl) return;
+    const textEl = deepseekStatusEl.querySelector(".status-text");
+    if (textEl) {
+      textEl.textContent = settings?.deepseekApiKey ? "DEEPSEEK: 已连接" : "DEEPSEEK: 就绪";
+    }
+  }
+
+  async function saveDeepSeekSettings() {
+    const patch = {
+      deepseekApiKey: deepseekKeyInput?.value.trim() || "",
+      deepseekBaseUrl: deepseekUrlInput?.value.trim() || "https://api.deepseek.com/v1",
+      deepseekModel: deepseekModelInput?.value.trim() || "deepseek-chat",
+      syncEndpoint: syncEndpointInput?.value.trim() || "",
+      userToken: syncTokenInput?.value.trim() || "",
+    };
+    const s = await aidn.advanced.settings?.patch(patch);
+    syncDeepSeekStatus(s);
+  }
+
+  if (deepseekKeyInput) deepseekKeyInput.addEventListener("change", saveDeepSeekSettings);
+  if (deepseekUrlInput) deepseekUrlInput.addEventListener("change", saveDeepSeekSettings);
+  if (deepseekModelInput) deepseekModelInput.addEventListener("change", saveDeepSeekSettings);
+  if (syncEndpointInput) syncEndpointInput.addEventListener("change", saveDeepSeekSettings);
+  if (syncTokenInput) syncTokenInput.addEventListener("change", saveDeepSeekSettings);
+
+  if (syncNowBtn) {
+    syncNowBtn.addEventListener("click", async () => {
+      if (syncStatusMsg) syncStatusMsg.textContent = "同步中…";
+      try {
+        const res = await aidn.sync.syncNow();
+        if (res && res.ok) {
+          if (syncStatusMsg) syncStatusMsg.textContent = res.offline ? "已完成本地标记" : `同步完成 (+${res.serverUpdatesCount})`;
+          await refresh();
+        } else {
+          if (syncStatusMsg) syncStatusMsg.textContent = "同步完成";
+        }
+      } catch (err) {
+        if (syncStatusMsg) syncStatusMsg.textContent = "失败: " + err.message;
+      }
+    });
+  }
 
   captureToggle.addEventListener("change", async () => {
     await aidn.advanced.settings?.patch({ captureButtonEnabled: captureToggle.checked });
@@ -571,11 +701,173 @@
     await refresh();
   });
 
+  // ---- 《AI 讨论纪事报》头版号外自测交互状态机 (RFC-004 Section 2 & 5) ----
+  let currentRecallIssue = null;
+  let currentTargetNote = null;
+
+  function renderRecallIssue(issue, targetNote) {
+    currentRecallIssue = issue;
+    currentTargetNote = targetNote;
+
+    if (recallLeadSource) recallLeadSource.textContent = issue.leadSource || "AI 对话";
+    if (recallQ1Title) recallQ1Title.textContent = issue.q1?.title || "";
+    if (recallQ1Sub) recallQ1Sub.textContent = issue.q1?.sub || "";
+    if (recallClueText) recallClueText.textContent = issue.q1?.clue || "关注设计边界与因果推导。";
+    if (recallAnchorText) recallAnchorText.textContent = issue.q1?.anchor || "核心业务规则不可动摇。";
+
+    // 原文对照 (首字下沉排版)
+    if (recallOriginalText) {
+      recallOriginalText.innerHTML = "";
+      if (targetNote) {
+        const rendered = renderMarkdown(targetNote.contentMarkdown || targetNote.contentText);
+        recallOriginalText.appendChild(rendered);
+      } else {
+        const p = document.createElement("p");
+        p.textContent = "未找到对应原笔记内容";
+        recallOriginalText.appendChild(p);
+      }
+    }
+
+    if (recallQ2Title) recallQ2Title.textContent = issue.q2?.title || "概念辨析";
+    if (recallQ2Text) recallQ2Text.textContent = issue.q2?.body || "";
+
+    if (recallQ3Title) recallQ3Title.textContent = issue.q3?.title || "微言速测";
+    if (recallQ3Text) recallQ3Text.textContent = issue.q3?.body || "";
+
+    // 状态机重置：Folded / ClueHidden (RFC-004 Section 5)
+    if (recallClueBox) recallClueBox.classList.add("hidden");
+    if (recallClueBtn) recallClueBtn.textContent = "研读思考线索 ✦";
+
+    if (recallOriginalBox) recallOriginalBox.classList.add("hidden");
+    if (recallUnfoldBtn) recallUnfoldBtn.textContent = "翻阅号外原文对照 ↓";
+
+    if (recallQ2Body) recallQ2Body.classList.add("hidden");
+    if (recallQ2Toggle) recallQ2Toggle.textContent = "查看概念解析 ↓";
+
+    if (recallQ3Body) recallQ3Body.classList.add("hidden");
+    if (recallQ3Toggle) recallQ3Toggle.textContent = "揭晓快测答案 ↓";
+
+    if (recallThoughtInput) recallThoughtInput.value = "";
+    if (recallThoughtHint) recallThoughtHint.textContent = "";
+  }
+
+  async function loadRecallIssue(preferredNoteId) {
+    if (allNotes.length === 0) {
+      alert("请先保存至少一条笔记，方可印制号外自测！");
+      closeRecallModal();
+      return;
+    }
+    let targetNote = null;
+    if (preferredNoteId) {
+      targetNote = allNotes.find((n) => n.id === preferredNoteId);
+    }
+    if (!targetNote) {
+      const randIdx = Math.floor(Math.random() * allNotes.length);
+      targetNote = allNotes[randIdx];
+    }
+
+    const groupKey = AIDN.group.groupKeyOf(targetNote);
+    const convNotes = allNotes.filter((n) => AIDN.group.groupKeyOf(n) === groupKey);
+
+    const issue = await aidn.recall.generateIssue({
+      seriesName: targetNote.conversationTitle,
+      source: targetNote.source,
+      notes: convNotes.length > 0 ? convNotes : [targetNote],
+      targetNoteId: targetNote.id,
+    });
+
+    renderRecallIssue(issue, targetNote);
+  }
+
+  function openRecallModal(noteId) {
+    if (!recallModal || !recallOverlay) return;
+    recallOverlay.classList.remove("hidden");
+    recallModal.classList.remove("hidden");
+    loadRecallIssue(noteId);
+  }
+
+  function closeRecallModal() {
+    if (!recallModal || !recallOverlay) return;
+    recallOverlay.classList.add("hidden");
+    recallModal.classList.add("hidden");
+  }
+
+  if (openRecallBtn) openRecallBtn.addEventListener("click", () => openRecallModal());
+  if (recallCloseBtn) recallCloseBtn.addEventListener("click", closeRecallModal);
+  if (recallOverlay) recallOverlay.addEventListener("click", closeRecallModal);
+
+  if (recallShuffleBtn) {
+    recallShuffleBtn.addEventListener("click", () => {
+      loadRecallIssue();
+    });
+  }
+
+  // 状态机行为：展开线索 (Clue)
+  if (recallClueBtn) {
+    recallClueBtn.addEventListener("click", () => {
+      const isHidden = recallClueBox.classList.toggle("hidden");
+      recallClueBtn.textContent = isHidden ? "研读思考线索 ✦" : "隐去思考线索";
+    });
+  }
+
+  // 状态机行为：撕折展开号外原文 (Unfolded)
+  if (recallUnfoldBtn) {
+    recallUnfoldBtn.addEventListener("click", () => {
+      const isHidden = recallOriginalBox.classList.toggle("hidden");
+      recallUnfoldBtn.textContent = isHidden ? "翻阅号外原文对照 ↓" : "收拢号外原文 ↑";
+    });
+  }
+
+  // 状态机行为：展开概念辨析 (q2)
+  if (recallQ2Toggle) {
+    recallQ2Toggle.addEventListener("click", () => {
+      const isHidden = recallQ2Body.classList.toggle("hidden");
+      recallQ2Toggle.textContent = isHidden ? "查看概念解析 ↓" : "收起概念解析";
+    });
+  }
+
+  // 状态机行为：揭晓微言速测 (q3)
+  if (recallQ3Toggle) {
+    recallQ3Toggle.addEventListener("click", () => {
+      const isHidden = recallQ3Body.classList.toggle("hidden");
+      recallQ3Toggle.textContent = isHidden ? "揭晓快测答案 ↓" : "收起快测答案";
+    });
+  }
+
+  // 状态机行为：反思批注沉淀写回
+  if (recallThoughtSubmit) {
+    recallThoughtSubmit.addEventListener("click", async () => {
+      const text = recallThoughtInput?.value.trim();
+      const targetId = currentRecallIssue?.q1?.targetNoteId || currentTargetNote?.id;
+      if (!text || !targetId) return;
+      try {
+        recallThoughtSubmit.disabled = true;
+        await aidn.addThought(targetId, text);
+        recallThoughtInput.value = "";
+        if (recallThoughtHint) {
+          recallThoughtHint.textContent = "随笔批注已沉淀并回流至笔记！";
+          setTimeout(() => { if (recallThoughtHint) recallThoughtHint.textContent = ""; }, 2500);
+        }
+        await refresh();
+      } finally {
+        recallThoughtSubmit.disabled = false;
+      }
+    });
+  }
+
   // ---- init ----
   (async function init() {
     restoreFilterFromHash();
     const settings = await aidn.advanced.settings?.get();
-    captureToggle.checked = settings ? settings.captureButtonEnabled !== false : true;
+    if (settings) {
+      captureToggle.checked = settings.captureButtonEnabled !== false;
+      if (deepseekKeyInput) deepseekKeyInput.value = settings.deepseekApiKey || "";
+      if (deepseekUrlInput) deepseekUrlInput.value = settings.deepseekBaseUrl || "https://api.deepseek.com/v1";
+      if (deepseekModelInput) deepseekModelInput.value = settings.deepseekModel || "deepseek-chat";
+      if (syncEndpointInput) syncEndpointInput.value = settings.syncEndpoint || "";
+      if (syncTokenInput) syncTokenInput.value = settings.userToken || "";
+      syncDeepSeekStatus(settings);
+    }
     await refresh();
   })();
 })();

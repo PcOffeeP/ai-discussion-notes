@@ -54,7 +54,9 @@
       recall: {
         async generateIssue(params) {
           if (repo.getRecallIssue) {
-            return repo.getRecallIssue(params);
+            try {
+              return await repo.getRecallIssue(params);
+            } catch (_) { /* fallback below */ }
           }
           const client = AIDN.llm?.createDeepSeekClient ? AIDN.llm.createDeepSeekClient() : null;
           if (client) return client.generateRecallIssue(params);
@@ -62,7 +64,9 @@
         },
         async getProfile(recentNotes) {
           if (repo.getCognitiveProfile) {
-            return repo.getCognitiveProfile({ recentNotes });
+            try {
+              return await repo.getCognitiveProfile({ recentNotes });
+            } catch (_) { /* fallback below */ }
           }
           const client = AIDN.llm?.createDeepSeekClient ? AIDN.llm.createDeepSeekClient() : null;
           if (client) return client.generateCognitiveProfile({ recentNotes });

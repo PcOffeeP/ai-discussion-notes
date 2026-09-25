@@ -3,36 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 讨论笔记</title>
+  <title>AI 讨论纪事报 — 笔记与洞见存录</title>
   <link rel="stylesheet" href="notes.css" />
 </head>
 <body>
   <header class="topbar">
-    <h1 class="brand">AI 讨论笔记</h1>
+    <div class="topbar-left">
+      <h1 class="brand">《AI 讨论纪事报》<span class="brand-sub">// 档案库</span></h1>
+      <div id="deepseek-status" class="deepseek-status" title="DeepSeek 认知编排状态">
+        <span class="status-dot"></span>
+        <span class="status-text">DEEPSEEK: 就绪</span>
+      </div>
+    </div>
     <div class="topbar-actions">
-      <input id="search" type="search" placeholder="搜索笔记…" autocomplete="off" />
-      <button id="settings-btn" class="ghost-btn" title="设置">设置</button>
+      <button id="open-recall-btn" class="crimson-btn" title="印制头版号外自测">📰 头版号外自测</button>
+      <input id="search" type="search" placeholder="⌘K 检索纪事与随笔…" autocomplete="off" />
+      <button id="settings-btn" class="ghost-btn" title="系统设置">设置</button>
     </div>
   </header>
 
   <div class="layout">
-    <!-- Sidebar：过滤器，不是管理器（消费已有数据，不引入新实体） -->
-    <nav class="sidebar" id="sidebar">
+    <!-- Sidebar：专栏目次与认知雷达 -->
+    <aside class="sidebar" id="sidebar">
       <button class="side-item" id="side-all" data-filter="all">
-        <span>全部笔记</span><span class="side-count" id="count-all">0</span>
+        <span>全部纪事</span><span class="side-count" id="count-all">0</span>
       </button>
-      <div class="side-section">来源</div>
-      <div id="side-sources"></div>
-      <div class="side-section">对话</div>
-      <div id="side-conversations"></div>
-    </nav>
 
-    <main class="main">
-      <!-- Empty state（兼产品教学） -->
+      <div class="side-section">来源专栏</div>
+      <div id="side-sources"></div>
+
+      <div class="side-section">会话目次</div>
+      <div id="side-conversations"></div>
+
+      <!-- DEEPSEEK 认知雷达 (RFC-004) -->
+      <div class="radar-box">
+        <div class="side-section radar-head">
+          <span>// DEEPSEEK 认知雷达</span>
+          <button id="refresh-radar-btn" class="radar-refresh" title="重新提炼画像">↻</button>
+        </div>
+        <div id="cognitive-radar" class="cognitive-radar">
+          <div class="radar-topics" id="radar-topics">
+            <span class="radar-tag">系统架构</span>
+            <span class="radar-tag">认知编排</span>
+          </div>
+          <p class="radar-shift" id="radar-shift">从单体工具向跨端认知系统跃迁</p>
+          <div class="radar-meta" id="radar-time">画像更新于 刚刚</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <!-- 报头区 (Masthead - RFC-004) -->
+      <header class="broadsheet-masthead">
+        <div class="masthead-meta">
+          <span class="masthead-date" id="masthead-date">甲辰年 · 讨论文汇</span>
+          <span class="masthead-seal">【大模型洞见存录】</span>
+          <span class="masthead-vol" id="masthead-vol">总第 0 篇</span>
+        </div>
+        <div class="masthead-title-row">
+          <h2 class="masthead-title">AI 讨论纪事报</h2>
+          <span class="masthead-stamp">存录典藏</span>
+        </div>
+        <p class="masthead-motto">“记录人与大模型碰撞之洞见，于闲暇处重温以明心智”</p>
+        <div class="oxford-rules"></div>
+      </header>
+
+      <!-- Empty state（百年大报风格） -->
       <section id="empty-state" class="empty hidden">
-        <h2>保存你的最佳 AI 洞见。</h2>
-        <p>在 ChatGPT、Kimi 或 DeepSeek 中选中有价值的文字，即可保存到这里。</p>
-        <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">打开 ChatGPT</a>
+        <div class="empty-plate">
+          <span class="empty-badge">创刊号待印发</span>
+          <h2>保存你的第一份 AI 洞见</h2>
+          <p>在 ChatGPT、Kimi 或 DeepSeek 中选中有价值的论述，即可自动铅印排版至本报。</p>
+          <div class="empty-actions">
+            <a class="primary-btn" href="https://chatgpt.com/" target="_blank" rel="noopener">打开 ChatGPT</a>
+            <a class="ghost-btn" href="https://kimi.com/" target="_blank" rel="noopener">打开 Kimi</a>
+          </div>
+        </div>
       </section>
 
       <p id="result-count" class="result-count hidden"></p>
@@ -45,31 +91,168 @@
   <div id="settings-overlay" class="overlay hidden"></div>
   <aside id="settings-panel" class="settings hidden" aria-label="Settings">
     <div class="settings-head">
-      <h2>设置</h2>
+      <h2>报刊与同步设置</h2>
       <button id="settings-close" class="ghost-btn">关闭</button>
     </div>
 
     <section class="settings-section">
-      <h3>抓取按钮</h3>
+      <h3>选区采集</h3>
       <label class="toggle-row">
         <input type="checkbox" id="capture-toggle" />
-        <span>选中文字时显示「＋ Note」按钮</span>
+        <span>选中网页文字时浮现「＋ Note」快捷印制按钮</span>
       </label>
     </section>
 
     <section class="settings-section">
-      <h3>数据</h3>
-      <p>本地已保存 <span id="note-count">0</span> 条笔记</p>
+      <h3>DeepSeek 认知模型 (RFC-003)</h3>
+      <p class="section-desc">用于动态认知画像提炼与《AI 讨论纪事报》头版号外自测出题。</p>
+      <label class="form-row">
+        <span class="form-label">API Key</span>
+        <input type="password" id="deepseek-key-input" placeholder="sk-..." autocomplete="off" />
+      </label>
+      <label class="form-row">
+        <span class="form-label">Base URL</span>
+        <input type="text" id="deepseek-url-input" placeholder="https://api.deepseek.com/v1" />
+      </label>
+      <label class="form-row">
+        <span class="form-label">模型</span>
+        <input type="text" id="deepseek-model-input" placeholder="deepseek-chat" />
+      </label>
+    </section>
+
+    <section class="settings-section">
+      <h3>云端跨端同步 (Delta Sync)</h3>
+      <p class="section-desc">实现电脑浏览器扩展与手机端复习客户端的双向增量同步。</p>
+      <label class="form-row">
+        <span class="form-label">同步网关</span>
+        <input type="url" id="sync-endpoint-input" placeholder="https://sync.example.com/api/sync" />
+      </label>
+      <label class="form-row">
+        <span class="form-label">用户 Token</span>
+        <input type="password" id="sync-token-input" placeholder="Bearer 鉴权凭证" />
+      </label>
       <div class="settings-actions">
-        <button id="export-btn" class="ghost-btn">导出笔记（JSON）</button>
+        <button id="sync-now-btn" class="ghost-btn">立即增量同步</button>
+        <span id="sync-status-msg" class="sync-status-msg"></span>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h3>本地档案库</h3>
+      <p>本地已铅印保存 <span id="note-count">0</span> 条笔记</p>
+      <div class="settings-actions">
+        <button id="export-btn" class="ghost-btn">导出完整档案（JSON）</button>
         <button id="clear-btn" class="danger-btn">清空全部笔记</button>
       </div>
     </section>
   </aside>
 
+  <!-- 《AI 讨论纪事报》头版号外自测组件 (RFC-004 Section 2 & 5) -->
+  <div id="recall-overlay" class="recall-overlay hidden"></div>
+  <aside id="recall-modal" class="recall-modal hidden" aria-label="头版号外自测">
+    <div class="recall-scroll">
+      <div class="recall-broadsheet">
+        <!-- 报头区 (Masthead) -->
+        <header class="recall-masthead">
+          <div class="recall-meta">
+            <span id="recall-masthead-date">甲辰年 · 讨论文汇</span>
+            <span class="recall-masthead-center">【头版号外自测】</span>
+            <span id="recall-issue-id">总第四十二期</span>
+          </div>
+          <div class="recall-title-wrap">
+            <h2 class="recall-title">《AI 讨论纪事报》</h2>
+            <span class="recall-stamp">号外印章</span>
+          </div>
+          <p class="recall-motto">“聚天下大模型之精义 · 备闲暇碎片时之自省”</p>
+          <div class="oxford-rules"></div>
+        </header>
+
+        <!-- 栏目一：【头版头条 · 深度推演】(Lead Story - q1) -->
+        <article class="recall-section lead-story">
+          <div class="recall-section-head">
+            <span class="recall-kicker">栏目一 · 头版头条</span>
+            <span class="recall-source" id="recall-lead-source">ChatGPT · 昨天 16:10</span>
+          </div>
+          <h3 class="recall-headline" id="recall-q1-title">论持久化模型映射为何绝不可外泄至外部适配器？</h3>
+          <p class="recall-sub" id="recall-q1-sub">“防腐层（ACL）与数据适配器究竟在保护什么核心不变量？”</p>
+
+          <!-- 交互操作与线索展开 -->
+          <div class="recall-actions-bar">
+            <button id="recall-clue-btn" class="recall-btn outline">研读思考线索 ✦</button>
+            <button id="recall-unfold-btn" class="recall-btn outline">翻阅号外原文对照 ↓</button>
+          </div>
+
+          <div id="recall-clue-box" class="recall-clue-box hidden">
+            <span class="clue-label">// 思考线索 (CLUE):</span>
+            <p id="recall-clue-text" class="clue-text">回想持久化层对外暴露接口时，外部变动对领域核心造成的连锁反应。</p>
+          </div>
+
+          <!-- 原文对照展开区 (物理撕折动效，首字下沉 + 记忆锚点) -->
+          <div id="recall-original-box" class="recall-original-box hidden">
+            <div class="recall-fold-crease"></div>
+            <div class="recall-original-content" id="recall-original-text">
+              <!-- 首字下沉原笔记正文动态挂载 -->
+            </div>
+            <div class="recall-anchor-card">
+              <span class="anchor-label">// DEEPSEEK 记忆锚点:</span>
+              <p id="recall-anchor-text" class="anchor-text">核心业务规则如磐石，数据库与外设皆流沙。</p>
+            </div>
+            <!-- 随手批注栏 (Thought Box) -->
+            <div class="recall-thought-box">
+              <span class="thought-label">随手记下新启示（批注回流）：</span>
+              <div class="thought-input-row">
+                <input type="text" id="recall-thought-input" placeholder="输入反思与随感…" autocomplete="off" />
+                <button id="recall-thought-submit" class="crimson-btn">沉淀</button>
+              </div>
+              <span id="recall-thought-hint" class="recall-thought-hint"></span>
+            </div>
+          </div>
+        </article>
+
+        <div class="broadsheet-divider"></div>
+
+        <!-- 栏目二：【报眼要闻 · 概念辨析】(Side Column - q2) -->
+        <article class="recall-section side-story">
+          <div class="recall-section-head">
+            <span class="recall-kicker">栏目二 · 报眼要闻</span>
+          </div>
+          <h4 class="recall-sub-headline" id="recall-q2-title">概念辨析：防腐层与普通 Data Mapper 有何本质区别？</h4>
+          <button id="recall-q2-toggle" class="recall-reveal-btn">查看概念解析 ↓</button>
+          <div id="recall-q2-body" class="recall-reveal-body hidden">
+            <p id="recall-q2-text">防腐层建立独立领域语义并阻断外部变更污染；普通 Mapper 仅完成字段双向映射。</p>
+          </div>
+        </article>
+
+        <div class="broadsheet-divider"></div>
+
+        <!-- 栏目三：【微言速测 · 一问快答】(Brief Dispatch - q3) -->
+        <article class="recall-section brief-dispatch">
+          <div class="recall-section-head">
+            <span class="recall-kicker">栏目三 · 微言速测</span>
+          </div>
+          <h4 class="recall-sub-headline" id="recall-q3-title">数据库字段更名，领域逻辑代码是否应该修改？</h4>
+          <button id="recall-q3-toggle" class="recall-reveal-btn">揭晓快测答案 ↓</button>
+          <div id="recall-q3-body" class="recall-reveal-body hidden">
+            <p id="recall-q3-text">绝不应该。数据库细节应由持久化适配器消化隔离。</p>
+          </div>
+        </article>
+
+        <!-- 通栏底栏换版操作 (RFC-004) -->
+        <footer class="recall-footer">
+          <div class="oxford-rules"></div>
+          <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一版号外自测 (换一批) ✦</button>
+          <button id="recall-close-btn" class="ghost-btn recall-close-btn">收拢号外返回档案</button>
+        </footer>
+      </div>
+    </div>
+  </aside>
+
   <script src="../core/note.js"></script>
   <script src="../core/group.js"></script>
   <script src="../core/pipeline.js"></script>
+  <script src="../core/recall/prompt-builder.js"></script>
+  <script src="../core/recall/response-parser.js"></script>
+  <script src="../adapters/llm/deepseek-client.js"></script>
   <script src="../adapters/chrome/runtime-client.js"></script>
   <script src="../client/aidn.js"></script>
   <script src="../vendor/markdown-it.min.js"></script>
