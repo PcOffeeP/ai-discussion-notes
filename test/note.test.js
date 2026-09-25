@@ -42,9 +42,33 @@ test("migrate: v1 content 字段无损升级为 v2", () => {
   assert.equal(n.createdAt, v1.createdAt);
 });
 
-test("migrate: 已是 v2 则原样返回；非法输入返回 null", () => {
-  const v2 = createNote({ contentText: "x" });
-  assert.equal(migrate(v2), v2);
+test("migrate: 已是 v3 则原样返回；v2 升级为 v3 保持兼容并补齐 metadata", () => {
+  const v3 = createNote({ contentText: "x", metadata: { dirty: false, recallCount: 2 } });
+  assert.equal(migrate(v3), v3);
+  assert.equal(v3.schemaVersion, 3);
+  assert.equal(v3.metadata.recallCount, 2);
+
+  const v2 = {
+    id: "note_v2",
+    schemaVersion: 2,
+    contentMarkdown: "v2 content",
+    contentText: "v2 content",
+    contentHtml: "",
+    source: "Kimi",
+    sourceType: "chat",
+    conversationTitle: "探讨",
+    conversationUrl: "https://kimi.com/1",
+    metadata: { host: "kimi.com" },
+    thoughts: [{ id: "t1", text: "thought", createdAt: "2026-09-25T10:00:00Z" }],
+    createdAt: "2026-09-25T10:00:00Z",
+  };
+  const upgraded = migrate(v2);
+  assert.equal(upgraded.schemaVersion, 3);
+  assert.equal(upgraded.id, "note_v2");
+  assert.equal(upgraded.metadata.host, "kimi.com");
+  assert.equal(upgraded.metadata.dirty, false);
+  assert.equal(upgraded.thoughts.length, 1);
+
   assert.equal(migrate(null), null);
   assert.equal(migrate("junk"), null);
 });

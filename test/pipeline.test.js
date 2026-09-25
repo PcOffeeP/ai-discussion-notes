@@ -70,10 +70,10 @@ test("repo 契约：save/list/delete/clear + v1 惰性迁移回写", async () =>
 
   // list 触发迁移
   const notes = await repo.list();
-  assert.equal(notes[0].schemaVersion, 2);
+  assert.equal(notes[0].schemaVersion, AIDN.note.SCHEMA_VERSION);
   assert.equal(notes[0].contentMarkdown, "v1 旧数据");
   // 已回写
-  assert.equal(kv._dump().notes[0].schemaVersion, 2);
+  assert.equal(kv._dump().notes[0].schemaVersion, AIDN.note.SCHEMA_VERSION);
 
   const n = AIDN.note.createNote({ contentText: "new" });
   await repo.save(n);

@@ -2,7 +2,7 @@
 // UMD 风格挂到 AIDN 命名空间：content script 无法 ESM import，且不引入构建工具。
 (function (global) {
   const AIDN = (global.AIDN = global.AIDN || {});
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
 
   function genId() {
     return "note_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -25,12 +25,19 @@
   }
 
   /**
-   * 创建 v2 Note。三种表示可独立提供，缺省时互相推导：
+   * 创建 v3 Note。三种表示可独立提供，缺省时互相推导：
    * contentMarkdown ← contentText；contentText ← markdownToText(contentMarkdown)。
+   * 支持 RFC-003 同步与复习元数据：syncedAt, dirty, lastRecalledAt, recallCount。
    */
   function createNote(dto) {
     dto = dto || {};
     const markdown = dto.contentMarkdown || dto.contentText || "";
+    const metadata = Object.assign(
+      {
+        dirty: dto.metadata && dto.metadata.dirty !== undefined ? dto.metadata.dirty : true,
+      },
+      dto.metadata || {}
+    );
     const note = {
       id: dto.id || genId(),
       schemaVersion: SCHEMA_VERSION,
@@ -41,7 +48,7 @@
       sourceType: dto.sourceType || "chat",
       conversationTitle: dto.conversationTitle || "",
       conversationUrl: dto.conversationUrl || "",
-      metadata: dto.metadata || {},
+      metadata: metadata,
       thoughts: Array.isArray(dto.thoughts) ? dto.thoughts : [],
       createdAt: dto.createdAt || new Date().toISOString(),
     };
@@ -57,10 +64,17 @@
     };
   }
 
-  // v1（单 content 字符串）→ v2，无损迁移；已是 v2 则原样返回。
+  // v1/v2 → v3，无损迁移；已是 v3 则原样返回。
   function migrate(raw) {
     if (!raw || typeof raw !== "object") return null;
     if (raw.schemaVersion === SCHEMA_VERSION) return raw;
+    if (raw.schemaVersion === 2) {
+      return Object.assign({}, raw, {
+        schemaVersion: SCHEMA_VERSION,
+        metadata: Object.assign({ dirty: false }, raw.metadata || {}),
+        thoughts: Array.isArray(raw.thoughts) ? raw.thoughts : [],
+      });
+    }
     return createNote({
       id: raw.id,
       contentMarkdown: raw.content || raw.contentMarkdown || "",
@@ -69,7 +83,8 @@
       sourceType: raw.sourceType,
       conversationTitle: raw.conversationTitle,
       conversationUrl: raw.conversationUrl,
-      metadata: raw.metadata,
+      metadata: Object.assign({ dirty: false }, raw.metadata || {}),
+      thoughts: [],
       createdAt: raw.createdAt,
     });
   }
