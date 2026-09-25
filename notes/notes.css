@@ -600,23 +600,124 @@ button {
 
 .note-main { flex: 1; min-width: 0; }
 
-/* 首字下沉与正文铅印排版 */
+/* 正常优雅的 Markdown 正文排版 (无任何首字放大/大写干扰) */
 .note-content {
   margin: 0 0 14px;
   font-family: var(--font-serif-body);
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.75;
+  color: var(--ink-black);
   word-break: break-word;
-  text-align: justify;
 }
-.note-md > p:first-of-type::first-letter {
-  float: left;
-  font-size: 3.2em;
-  line-height: 0.85;
-  margin: 4px 8px 0 0;
-  color: var(--crimson-red);
+
+.note-md > *:first-child { margin-top: 0; }
+.note-md > *:last-child { margin-bottom: 0; }
+
+.note-md p {
+  margin: 0 0 10px;
+}
+
+.note-md h1,
+.note-md h2,
+.note-md h3,
+.note-md h4 {
   font-family: var(--font-serif-masthead);
   font-weight: 700;
+  color: var(--ink-black);
+  line-height: 1.35;
+  margin: 16px 0 8px;
+}
+.note-md h1 { font-size: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px; }
+.note-md h2 { font-size: 16px; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 3px; }
+.note-md h3 { font-size: 14.5px; }
+.note-md h4 { font-size: 13.5px; }
+
+.note-md ul,
+.note-md ol {
+  margin: 8px 0 12px;
+  padding-left: 22px;
+}
+.note-md li {
+  margin-bottom: 3px;
+  line-height: 1.7;
+}
+
+.note-md blockquote {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: var(--newsprint-dim);
+  border-left: 3px solid var(--oxford-line);
+  color: var(--ink-muted);
+  font-style: italic;
+}
+.note-md blockquote p:last-child { margin-bottom: 0; }
+
+.note-md code {
+  font-family: var(--font-mono-meta);
+  font-size: 12px;
+  padding: 1px 5px;
+  background: var(--newsprint-dim);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0px;
+  color: var(--ink-black);
+}
+
+.note-md pre {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: #20201e;
+  color: #f4efe2;
+  border-radius: 0px;
+  overflow-x: auto;
+  font-family: var(--font-mono-meta);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.note-md pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.note-md table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12.5px;
+  border-top: 1px solid var(--oxford-line);
+  border-bottom: 2px solid var(--oxford-line);
+}
+.note-md th,
+.note-md td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+.note-md th {
+  font-family: var(--font-serif-masthead);
+  font-weight: 700;
+  background: var(--newsprint-dim);
+  color: var(--ink-black);
+}
+.note-md tr:last-child td {
+  border-bottom: none;
+}
+
+.note-md a {
+  color: var(--crimson-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.note-md a:hover {
+  color: var(--crimson-hover);
+}
+
+.note-md hr {
+  border: none;
+  border-bottom: 1px dashed var(--border-subtle);
+  margin: 14px 0;
 }
 
 .note-raw {
@@ -1037,19 +1138,13 @@ button {
 }
 .recall-original-content {
   font-family: var(--font-serif-body);
-  font-size: 13px;
-  line-height: 1.8;
-  text-align: justify;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink-black);
   margin-bottom: 14px;
 }
-.recall-original-content p:first-of-type::first-letter {
-  float: left;
-  font-size: 3em;
-  line-height: 0.85;
-  margin: 4px 6px 0 0;
-  color: var(--crimson-red);
-  font-family: var(--font-serif-masthead);
-  font-weight: 700;
+.recall-original-content p {
+  margin: 0 0 10px;
 }
 
 .recall-anchor-card {
