@@ -722,7 +722,10 @@
     syncNowBtn.addEventListener("click", async () => {
       if (syncStatusMsg) syncStatusMsg.textContent = "同步中…";
       try {
-        const res = await aidn.sync.syncNow();
+        const endpoint = syncEndpointInput?.value.trim() || "";
+        const token = syncTokenInput?.value.trim() || "";
+        await saveDeepSeekSettings();
+        const res = await aidn.sync.syncNow({ syncEndpoint: endpoint, userToken: token });
         if (res && res.ok) {
           if (syncStatusMsg) syncStatusMsg.textContent = res.offline ? "已完成本地标记" : `同步完成 (+${res.serverUpdatesCount})`;
           await refresh();

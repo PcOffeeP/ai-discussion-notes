@@ -227,6 +227,23 @@
     </section>
 
     <section class="settings-section">
+      <h3>个人专属云端同步</h3>
+      <p class="section-desc">电脑插件与手机 App 填入相同 Token，随时随地自动双向增量同步。</p>
+      <label class="form-row">
+        <span class="form-label">同步地址</span>
+        <input type="url" id="m-sync-endpoint" placeholder="http://<公网IP或域名>:3000/api/sync" />
+      </label>
+      <label class="form-row">
+        <span class="form-label">私密 Token</span>
+        <input type="password" id="m-sync-token" placeholder="你的专属 Secret Token" />
+      </label>
+      <div class="settings-actions">
+        <button id="m-sync-now-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">立即同步</button>
+        <span id="m-sync-status-msg" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+      </div>
+    </section>
+
+    <section class="settings-section">
       <h3>DeepSeek 认知模型配置</h3>
       <p class="section-desc">未配置时使用本地启发式智能出题；配置后走官方 API 实测深度出题。</p>
       <label class="form-row">
@@ -251,6 +268,7 @@
   <script src="core/recall/response-parser.js"></script>
   <script src="adapters/chrome/kv.js"></script>
   <script src="adapters/chrome/storage-note-repo.js"></script>
+  <script src="adapters/chrome/cloud-sync-note-repo.js"></script>
   <script src="adapters/llm/deepseek-client.js"></script>
   <script src="vendor/markdown-it.min.js"></script>
   <script src="vendor/dompurify.min.js"></script>
@@ -259,7 +277,8 @@
     (function () {
       const AIDN = window.AIDN;
       const kv = AIDN.createLocalStorageKV("aidn_mobile_");
-      const repo = AIDN.createStorageNoteRepo(kv);
+      const baseRepo = AIDN.createStorageNoteRepo(kv);
+      const repo = AIDN.createCloudSyncNoteRepo ? AIDN.createCloudSyncNoteRepo({ localRepo: baseRepo, kv }) : baseRepo;
 
       // Markdown 渲染
       const md = window.markdownit ? window.markdownit({ linkify: true }) : null;
@@ -285,6 +304,10 @@
       const storedCountEl = document.getElementById("stored-count");
       const jsonFileInput = document.getElementById("json-file-input");
       const importStatusEl = document.getElementById("import-status");
+      const mSyncEndpointInput = document.getElementById("m-sync-endpoint");
+      const mSyncTokenInput = document.getElementById("m-sync-token");
+      const mSyncNowBtn = document.getElementById("m-sync-now-btn");
+      const mSyncStatusMsg = document.getElementById("m-sync-status-msg");
       const mKeyInput = document.getElementById("m-deepseek-key");
       const mUrlInput = document.getElementById("m-deepseek-url");
       const mSaveKeyBtn = document.getElementById("m-save-key-btn");
@@ -467,6 +490,8 @@
         storedCountEl.textContent = String(currentNotes.length);
         mKeyInput.value = localStorage.getItem("aidn_m_deepseek_key") || "";
         mUrlInput.value = localStorage.getItem("aidn_m_deepseek_url") || "https://api.deepseek.com/v1";
+        if (mSyncEndpointInput) mSyncEndpointInput.value = localStorage.getItem("aidn_m_sync_endpoint") || "";
+        if (mSyncTokenInput) mSyncTokenInput.value = localStorage.getItem("aidn_m_sync_token") || "";
         drawerOverlay.classList.remove("hidden");
         drawer.classList.remove("hidden");
       }
@@ -485,6 +510,40 @@
         syncStatusUI();
         closeDrawer();
       });
+
+      // 个人专属云端增量同步
+      if (mSyncNowBtn) {
+        mSyncNowBtn.addEventListener("click", async () => {
+          const endpoint = (mSyncEndpointInput ? mSyncEndpointInput.value.trim() : "");
+          const token = (mSyncTokenInput ? mSyncTokenInput.value.trim() : "");
+          localStorage.setItem("aidn_m_sync_endpoint", endpoint);
+          localStorage.setItem("aidn_m_sync_token", token);
+
+          if (!endpoint) {
+            if (mSyncStatusMsg) mSyncStatusMsg.textContent = "请先输入同步地址";
+            return;
+          }
+
+          if (mSyncStatusMsg) mSyncStatusMsg.textContent = "同步中…";
+          try {
+            const res = await repo.sync({ syncEndpoint: endpoint, userToken: token });
+            if (res && res.ok) {
+              currentNotes = await repo.list();
+              storedCountEl.textContent = String(currentNotes.length);
+              if (mSyncStatusMsg) {
+                mSyncStatusMsg.textContent = res.offline
+                  ? "已本地标记"
+                  : `同步成功 (拉取 +${res.serverUpdatesCount})`;
+              }
+              if (res.serverUpdatesCount > 0) {
+                shuffleIssue();
+              }
+            }
+          } catch (err) {
+            if (mSyncStatusMsg) mSyncStatusMsg.textContent = "失败: " + err.message;
+          }
+        });
+      }
 
       // 导入 PC 端导出的 JSON 档案
       jsonFileInput.addEventListener("change", async (e) => {
@@ -535,6 +594,21 @@
         }
         storedCountEl.textContent = String(currentNotes.length);
         shuffleIssue();
+
+        // 若已配置云同步，后台静默同步一次
+        const endpoint = localStorage.getItem("aidn_m_sync_endpoint") || "";
+        const token = localStorage.getItem("aidn_m_sync_token") || "";
+        if (endpoint) {
+          repo.sync({ syncEndpoint: endpoint, userToken: token })
+            .then(async (res) => {
+              if (res && res.serverUpdatesCount > 0) {
+                currentNotes = await repo.list();
+                storedCountEl.textContent = String(currentNotes.length);
+                shuffleIssue();
+              }
+            })
+            .catch(() => {});
+        }
       }
 
       init();
