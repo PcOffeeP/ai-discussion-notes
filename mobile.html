@@ -259,6 +259,22 @@
         <button id="m-reset-sample-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">重载预置示范笔记</button>
       </div>
     </section>
+
+    <section class="settings-section">
+      <h3>应用版本与在线升级</h3>
+      <p class="section-desc">直接在手机上一键检查并下载最新版，无需重复使用电脑传包安装。</p>
+      <div style="font-family: var(--font-mono-meta); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 8px;">
+        当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">v0.4.0</strong>
+      </div>
+      <div class="settings-actions">
+        <button id="check-update-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">检查新版本 ✦</button>
+        <span id="update-status-msg" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+      </div>
+      <div id="update-action-box" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(184,51,42,0.06); border: 1px solid var(--border-dark);">
+        <p id="update-notes-text" style="font-size: 12px; margin: 0 0 8px; line-height: 1.5; white-space: pre-line;"></p>
+        <a id="download-apk-link" href="#" class="crimson-btn" style="display: inline-block; padding: 6px 14px; text-decoration: none; font-size: 12px;" target="_blank">手机立即下载新版 APK ↓</a>
+      </div>
+    </section>
   </aside>
 
   <!-- 脚本装配 (纯前端与 LocalStorage 驱动) -->
@@ -604,6 +620,53 @@
         importStatusEl.textContent = "已重载 3 篇经典示范笔记";
         shuffleIssue();
       });
+
+      // 应用内检查更新与一键在线升级
+      const CURRENT_APP_VERSION = "v0.4.0";
+      const checkUpdateBtn = document.getElementById("check-update-btn");
+      const updateStatusMsg = document.getElementById("update-status-msg");
+      const updateActionBox = document.getElementById("update-action-box");
+      const updateNotesText = document.getElementById("update-notes-text");
+      const downloadApkLink = document.getElementById("download-apk-link");
+
+      async function checkForUpdates(manual = false) {
+        if (manual && updateStatusMsg) updateStatusMsg.textContent = "正在云端检查更新…";
+        try {
+          // 优先查 latest-mobile 预发标签，若无则退回 /releases/latest
+          let resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/tags/latest-mobile").catch(() => null);
+          if (!resp || !resp.ok) {
+            resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/latest").catch(() => null);
+          }
+          if (!resp || !resp.ok) {
+            if (manual && updateStatusMsg) updateStatusMsg.textContent = "已是最新版本 ✓";
+            return;
+          }
+          const data = await resp.json();
+          const latestTag = data.tag_name || "";
+          const assets = data.assets || [];
+          const apkAsset = assets.find((a) => a.name && a.name.endsWith(".apk")) || assets[0];
+          const downloadUrl = apkAsset?.browser_download_url || data.html_url;
+
+          const isNewer = latestTag && latestTag !== CURRENT_APP_VERSION;
+          if (isNewer && downloadUrl) {
+            if (updateStatusMsg) updateStatusMsg.textContent = `发现新版本：${latestTag}`;
+            if (updateNotesText) {
+              const pubTime = data.published_at ? new Date(data.published_at).toLocaleDateString() : "";
+              updateNotesText.textContent = `最新版本：${latestTag} (${pubTime})\n${(data.body || "常规性能调优与功能更新").slice(0, 150)}`;
+            }
+            if (downloadApkLink) downloadApkLink.href = downloadUrl;
+            if (updateActionBox) updateActionBox.classList.remove("hidden");
+          } else {
+            if (manual && updateStatusMsg) updateStatusMsg.textContent = "已是最新版本 ✓";
+          }
+        } catch (err) {
+          if (manual && updateStatusMsg) updateStatusMsg.textContent = "检查失败: " + err.message;
+        }
+      }
+
+      if (checkUpdateBtn) {
+        checkUpdateBtn.addEventListener("click", () => checkForUpdates(true));
+      }
 
       // 初始化
       async function init() {

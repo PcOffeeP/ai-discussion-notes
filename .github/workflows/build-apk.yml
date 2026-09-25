@@ -10,6 +10,8 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -47,3 +49,14 @@ jobs:
           name: AI-Discussion-Notes-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Publish or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/broadsheet-recall-system'
+        with:
+          tag_name: latest-mobile
+          name: "最新移动端测试版 (Latest Mobile Build)"
+          body: "GitHub Actions 自动构建的最新安卓 APP 安装包。手机打开此页面或在 App 内点击「检查更新」即可一键升级。"
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
