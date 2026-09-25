@@ -621,24 +621,53 @@
         shuffleIssue();
       });
 
-      // 应用内检查更新与一键在线升级
-      const CURRENT_APP_VERSION = "v0.4.0";
+      // 应用内检查更新与一键在线升级 (带精准版本号控制与比对)
+      const buildInfo = window.__APP_BUILD_INFO__ || {
+        version: "0.4.1",
+        versionCode: 401,
+        commit: "dev",
+        buildTime: "",
+      };
+
+      const appCurrentVerEl = document.getElementById("app-current-ver");
+      if (appCurrentVerEl) {
+        appCurrentVerEl.textContent = `v${buildInfo.version} (Build ${buildInfo.versionCode}${buildInfo.commit ? ' · ' + buildInfo.commit : ''})`;
+      }
+
       const checkUpdateBtn = document.getElementById("check-update-btn");
       const updateStatusMsg = document.getElementById("update-status-msg");
       const updateActionBox = document.getElementById("update-action-box");
       const updateNotesText = document.getElementById("update-notes-text");
       const downloadApkLink = document.getElementById("download-apk-link");
 
+      function parseSemver(v) {
+        return (v || "").replace(/^v/, "").split(".").map(Number);
+      }
+
+      function isRemoteNewer(remoteVer, remoteCode, localVer, localCode) {
+        if (remoteCode && localCode) {
+          return remoteCode > localCode;
+        }
+        const rParts = parseSemver(remoteVer);
+        const lParts = parseSemver(localVer);
+        for (let i = 0; i < Math.max(rParts.length, lParts.length); i++) {
+          const r = rParts[i] || 0;
+          const l = lParts[i] || 0;
+          if (r > l) return true;
+          if (r < l) return false;
+        }
+        return false;
+      }
+
       async function checkForUpdates(manual = false) {
         if (manual && updateStatusMsg) updateStatusMsg.textContent = "正在云端检查更新…";
         try {
-          // 优先查 latest-mobile 预发标签，若无则退回 /releases/latest
           let resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/tags/latest-mobile").catch(() => null);
           if (!resp || !resp.ok) {
             resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/latest").catch(() => null);
           }
           if (!resp || !resp.ok) {
-            if (manual && updateStatusMsg) updateStatusMsg.textContent = "已是最新版本 ✓";
+            if (manual && updateStatusMsg) updateStatusMsg.textContent = "暂未检测到云端发布";
             return;
           }
           const data = await resp.json();
@@ -647,17 +676,38 @@
           const apkAsset = assets.find((a) => a.name && a.name.endsWith(".apk")) || assets[0];
           const downloadUrl = apkAsset?.browser_download_url || data.html_url;
 
-          const isNewer = latestTag && latestTag !== CURRENT_APP_VERSION;
-          if (isNewer && downloadUrl) {
-            if (updateStatusMsg) updateStatusMsg.textContent = `发现新版本：${latestTag}`;
+          // 尝试读取配套的 version.json 资产以获得精确 versionCode
+          let remoteVersionCode = 0;
+          let remoteVersionName = latestTag.replace(/^v/, "");
+          const versionJsonAsset = assets.find((a) => a.name === "version.json");
+          if (versionJsonAsset && versionJsonAsset.browser_download_url) {
+            try {
+              const vResp = await fetch(versionJsonAsset.browser_download_url);
+              if (vResp.ok) {
+                const vData = await vResp.json();
+                remoteVersionCode = vData.versionCode || 0;
+                if (vData.version) remoteVersionName = vData.version;
+              }
+            } catch (_) {}
+          }
+
+          const hasNewer = isRemoteNewer(remoteVersionName, remoteVersionCode, buildInfo.version, buildInfo.versionCode);
+          if (hasNewer && downloadUrl) {
+            const displayTag = `v${remoteVersionName}`;
+            if (updateStatusMsg) updateStatusMsg.textContent = `发现新版本：${displayTag}`;
             if (updateNotesText) {
               const pubTime = data.published_at ? new Date(data.published_at).toLocaleDateString() : "";
-              updateNotesText.textContent = `最新版本：${latestTag} (${pubTime})\n${(data.body || "常规性能调优与功能更新").slice(0, 150)}`;
+              updateNotesText.textContent = `发现新版：${displayTag} (发布时间: ${pubTime})\n当前运行：v${buildInfo.version} (Build ${buildInfo.versionCode})\n${(data.body || "常规性能调优与功能更新").slice(0, 150)}`;
             }
-            if (downloadApkLink) downloadApkLink.href = downloadUrl;
+            if (downloadApkLink) {
+              downloadApkLink.href = downloadUrl;
+              downloadApkLink.textContent = `立即在手机上下载并升级至 ${displayTag} ↓`;
+            }
             if (updateActionBox) updateActionBox.classList.remove("hidden");
           } else {
-            if (manual && updateStatusMsg) updateStatusMsg.textContent = "已是最新版本 ✓";
+            if (manual && updateStatusMsg) {
+              updateStatusMsg.textContent = `已是最新版本 (v${buildInfo.version}) ✓`;
+            }
           }
         } catch (err) {
           if (manual && updateStatusMsg) updateStatusMsg.textContent = "检查失败: " + err.message;

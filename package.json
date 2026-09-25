@@ -1,6 +1,6 @@
 {
   "name": "ai-discussion-notes",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Save the best things you learn from AI. (Chrome MV3 extension)",
   "scripts": {
