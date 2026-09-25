@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="AI纪事报" />
+  <link rel="apple-touch-icon" href="icons/icon128.png" />
+  <title>《AI 讨论纪事报》头版号外 — 移动端自测</title>
+  <link rel="stylesheet" href="notes/notes.css" />
+  <style>
+    body {
+      background: var(--newsprint-bg);
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mobile-app-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: var(--newsprint-bg);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .mobile-app-brand {
+      font-family: var(--font-serif-masthead);
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .mobile-app-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .mobile-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+    }
+    .mobile-broadsheet {
+      background: var(--newsprint-white);
+      border: 1px solid var(--border-subtle);
+      padding: 22px 18px;
+    }
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,25,24,0.55);
+      z-index: 200;
+    }
+    .drawer-content {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: var(--newsprint-bg);
+      border-top: 2px solid var(--ink-black);
+      padding: 20px;
+      z-index: 201;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    }
+    .drawer-title {
+      font-family: var(--font-serif-masthead);
+      font-size: 17px;
+      margin: 0 0 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 8px;
+    }
+    .file-import-btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+    .file-import-btn input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- 移动端顶部状态导航 -->
+  <header class="mobile-app-bar">
+    <h1 class="mobile-app-brand">《AI 讨论纪事报》</h1>
+    <div class="mobile-app-actions">
+      <div id="deepseek-status" class="deepseek-status unconfigured" title="点击配置 DeepSeek API">
+        <span class="status-dot"></span>
+        <span class="status-text">DEEPSEEK: 未配置</span>
+      </div>
+      <button id="open-settings-btn" class="ghost-btn" style="padding: 3px 8px; font-size: 11px;">设置 / 导入</button>
+    </div>
+  </header>
+
+  <main class="mobile-container">
+    <div class="mobile-broadsheet">
+      <!-- 报头区 (Masthead - RFC-004) -->
+      <header class="recall-masthead">
+        <div class="recall-meta">
+          <span id="recall-masthead-date">甲辰年 · 讨论文汇</span>
+          <span class="recall-masthead-center">【头版号外自测】</span>
+          <span id="recall-issue-id">总第四十二期</span>
+        </div>
+        <div class="recall-title-wrap">
+          <h2 class="recall-title">《AI 讨论纪事报》</h2>
+          <span class="recall-stamp">号外印章</span>
+        </div>
+        <p class="recall-motto">“聚天下大模型之精义 · 备闲暇碎片时之自省”</p>
+        <div class="oxford-rules"></div>
+      </header>
+
+      <!-- 栏目一：【头版头条 · 深度推演】(Lead Story - q1) -->
+      <article class="recall-section lead-story">
+        <div class="recall-section-head">
+          <span class="recall-kicker">栏目一 · 头版头条</span>
+          <span class="recall-source" id="recall-lead-source">ChatGPT · 昨天 16:10</span>
+        </div>
+        <h3 class="recall-headline" id="recall-q1-title">论持久化模型映射为何绝不可外泄至外部适配器？</h3>
+        <p class="recall-sub" id="recall-q1-sub">“防腐层（ACL）与数据适配器究竟在保护什么核心不变量？”</p>
+
+        <!-- 交互操作与线索展开 -->
+        <div class="recall-actions-bar">
+          <button id="recall-clue-btn" class="recall-btn outline">研读思考线索 ✦</button>
+          <button id="recall-unfold-btn" class="recall-btn outline">翻阅号外原文对照 ↓</button>
+        </div>
+
+        <div id="recall-clue-box" class="recall-clue-box hidden">
+          <span class="clue-label">// 思考线索 (CLUE):</span>
+          <p id="recall-clue-text" class="clue-text">回想持久化层对外暴露接口时，外部变动对领域核心造成的连锁反应。</p>
+        </div>
+
+        <!-- 原文对照展开区 (物理撕折动效，首字下沉 + 记忆锚点) -->
+        <div id="recall-original-box" class="recall-original-box hidden">
+          <div class="recall-original-content note-md" id="recall-original-text">
+            <!-- 原笔记正文动态挂载 -->
+          </div>
+          <div class="recall-anchor-card">
+            <span class="anchor-label">// DEEPSEEK 记忆锚点:</span>
+            <p id="recall-anchor-text" class="anchor-text">核心业务规则如磐石，数据库与外设皆流沙。</p>
+          </div>
+          <!-- 随手批注栏 (Thought Box) -->
+          <div class="recall-thought-box">
+            <span class="thought-label">随手记下新启示（批注回流）：</span>
+            <div class="thought-input-row">
+              <input type="text" id="recall-thought-input" placeholder="输入反思与随感…" autocomplete="off" />
+              <button id="recall-thought-submit" class="crimson-btn">沉淀</button>
+            </div>
+            <span id="recall-thought-hint" class="recall-thought-hint"></span>
+          </div>
+        </div>
+      </article>
+
+      <div class="broadsheet-divider"></div>
+
+      <!-- 栏目二：【报眼要闻 · 概念辨析】(Side Column - q2) -->
+      <article class="recall-section side-story">
+        <div class="recall-section-head">
+          <span class="recall-kicker">栏目二 · 报眼要闻</span>
+        </div>
+        <h4 class="recall-sub-headline" id="recall-q2-title">概念辨析：防腐层与普通 Data Mapper 有何本质区别？</h4>
+        <button id="recall-q2-toggle" class="recall-reveal-btn">查看概念解析 ↓</button>
+        <div id="recall-q2-body" class="recall-reveal-body hidden">
+          <p id="recall-q2-text">防腐层建立独立领域语义并阻断外部变更污染；普通 Mapper 仅完成字段双向映射。</p>
+        </div>
+      </article>
+
+      <div class="broadsheet-divider"></div>
+
+      <!-- 栏目三：【微言速测 · 一问快答】(Brief Dispatch - q3) -->
+      <article class="recall-section brief-dispatch">
+        <div class="recall-section-head">
+          <span class="recall-kicker">栏目三 · 微言速测</span>
+        </div>
+        <h4 class="recall-sub-headline" id="recall-q3-title">数据库字段更名，领域逻辑代码是否应该修改？</h4>
+        <button id="recall-q3-toggle" class="recall-reveal-btn">揭晓快测答案 ↓</button>
+        <div id="recall-q3-body" class="recall-reveal-body hidden">
+          <p id="recall-q3-text">绝不应该。数据库细节应由持久化适配器消化隔离。</p>
+        </div>
+      </article>
+
+      <!-- 通栏底栏换版操作 (RFC-004) -->
+      <footer class="recall-footer" style="margin-top: 28px;">
+        <div class="oxford-rules"></div>
+        <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一版号外自测 (换一批) ✦</button>
+        <p style="font-family: var(--font-mono-meta); font-size: 10px; color: var(--ink-faint); margin: 8px 0 0;">
+          零打卡压力 · 随时翻阅重温以明心智
+        </p>
+      </footer>
+    </div>
+  </main>
+
+  <!-- 移动端设置与导入抽屉 -->
+  <div id="mobile-drawer-overlay" class="drawer-overlay hidden"></div>
+  <aside id="mobile-drawer" class="drawer-content hidden">
+    <div class="drawer-title">
+      <span>报刊设置与笔记库</span>
+      <button id="close-drawer-btn" class="ghost-btn" style="padding: 2px 6px;">✕</button>
+    </div>
+
+    <section class="settings-section">
+      <h3>导入桌面端导出的笔记</h3>
+      <p class="section-desc">在电脑端「设置 → 导出笔记（JSON）」后，直接在此选取文件即可在手机离线自测。</p>
+      <div class="settings-actions">
+        <label class="ghost-btn file-import-btn">
+          <span>选择 JSON 档案导入</span>
+          <input type="file" id="json-file-input" accept=".json" />
+        </label>
+        <span id="import-status" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+      </div>
+      <p style="font-size: 11.5px; color: var(--ink-faint); margin: 8px 0 0;">
+        当前手机库内笔记：<strong id="stored-count">0</strong> 篇
+      </p>
+    </section>
+
+    <section class="settings-section">
+      <h3>DeepSeek 认知模型配置</h3>
+      <p class="section-desc">未配置时使用本地启发式智能出题；配置后走官方 API 实测深度出题。</p>
+      <label class="form-row">
+        <span class="form-label">API Key</span>
+        <input type="password" id="m-deepseek-key" placeholder="sk-..." />
+      </label>
+      <label class="form-row">
+        <span class="form-label">Base URL</span>
+        <input type="text" id="m-deepseek-url" placeholder="https://api.deepseek.com/v1" />
+      </label>
+      <div class="settings-actions">
+        <button id="m-save-key-btn" class="primary-btn" style="padding: 5px 12px; font-size: 12px;">保存配置</button>
+        <button id="m-reset-sample-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">重载预置示范笔记</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- 脚本装配 (纯前端与 LocalStorage 驱动) -->
+  <script src="core/note.js"></script>
+  <script src="core/group.js"></script>
+  <script src="core/recall/prompt-builder.js"></script>
+  <script src="core/recall/response-parser.js"></script>
+  <script src="adapters/chrome/kv.js"></script>
+  <script src="adapters/chrome/storage-note-repo.js"></script>
+  <script src="adapters/llm/deepseek-client.js"></script>
+  <script src="vendor/markdown-it.min.js"></script>
+  <script src="vendor/dompurify.min.js"></script>
+
+  <script>
+    (function () {
+      const AIDN = window.AIDN;
+      const kv = AIDN.createLocalStorageKV("aidn_mobile_");
+      const repo = AIDN.createStorageNoteRepo(kv);
+
+      // Markdown 渲染
+      const md = window.markdownit ? window.markdownit({ linkify: true }) : null;
+      function renderMarkdown(text) {
+        if (!md) {
+          const p = document.createElement("p");
+          p.textContent = text || "";
+          return p;
+        }
+        const clean = window.DOMPurify ? DOMPurify.sanitize(md.render(text || "")) : md.render(text || "");
+        const wrap = document.createElement("div");
+        wrap.className = "note-md";
+        wrap.innerHTML = clean;
+        return wrap;
+      }
+
+      // DOM 元素引用
+      const deepseekStatusEl = document.getElementById("deepseek-status");
+      const openSettingsBtn = document.getElementById("open-settings-btn");
+      const drawerOverlay = document.getElementById("mobile-drawer-overlay");
+      const drawer = document.getElementById("mobile-drawer");
+      const closeDrawerBtn = document.getElementById("close-drawer-btn");
+      const storedCountEl = document.getElementById("stored-count");
+      const jsonFileInput = document.getElementById("json-file-input");
+      const importStatusEl = document.getElementById("import-status");
+      const mKeyInput = document.getElementById("m-deepseek-key");
+      const mUrlInput = document.getElementById("m-deepseek-url");
+      const mSaveKeyBtn = document.getElementById("m-save-key-btn");
+      const mResetSampleBtn = document.getElementById("m-reset-sample-btn");
+
+      const recallLeadSource = document.getElementById("recall-lead-source");
+      const recallQ1Title = document.getElementById("recall-q1-title");
+      const recallQ1Sub = document.getElementById("recall-q1-sub");
+      const recallClueBtn = document.getElementById("recall-clue-btn");
+      const recallClueBox = document.getElementById("recall-clue-box");
+      const recallClueText = document.getElementById("recall-clue-text");
+      const recallUnfoldBtn = document.getElementById("recall-unfold-btn");
+      const recallOriginalBox = document.getElementById("recall-original-box");
+      const recallOriginalText = document.getElementById("recall-original-text");
+      const recallAnchorText = document.getElementById("recall-anchor-text");
+
+      const recallQ2Title = document.getElementById("recall-q2-title");
+      const recallQ2Toggle = document.getElementById("recall-q2-toggle");
+      const recallQ2Body = document.getElementById("recall-q2-body");
+      const recallQ2Text = document.getElementById("recall-q2-text");
+
+      const recallQ3Title = document.getElementById("recall-q3-title");
+      const recallQ3Toggle = document.getElementById("recall-q3-toggle");
+      const recallQ3Body = document.getElementById("recall-q3-body");
+      const recallQ3Text = document.getElementById("recall-q3-text");
+
+      const recallThoughtInput = document.getElementById("recall-thought-input");
+      const recallThoughtSubmit = document.getElementById("recall-thought-submit");
+      const recallThoughtHint = document.getElementById("recall-thought-hint");
+      const recallShuffleBtn = document.getElementById("recall-shuffle-btn");
+
+      let currentNotes = [];
+      let currentIssue = null;
+      let currentTargetNote = null;
+
+      // 预置经典示范数据（开箱即有内容体验自测）
+      const PRESET_SAMPLE_NOTES = [
+        {
+          id: "note_sample_1",
+          schemaVersion: 3,
+          source: "ChatGPT",
+          conversationTitle: "Python 六层架构与领域防腐",
+          contentMarkdown: "在六层架构中，数据持久化适配器通过实现领域层声明的 Repository 端口，来承担 ORM 到 Domain Model 的双向解包与装包过程。\n\n防腐层（ACL）隔离外部不稳定契约，保护核心业务规则免遭侵蚀。",
+          thoughts: [{ id: "t1", text: "防腐层是系统的关键中继转换带", createdAt: new Date().toISOString() }],
+          createdAt: new Date(Date.now() - 3600e3 * 2).toISOString(),
+        },
+        {
+          id: "note_sample_2",
+          schemaVersion: 3,
+          source: "Kimi",
+          conversationTitle: "分布式共识 Raft 算法机制",
+          contentMarkdown: "Raft 协议通过将共识问题分解为三大独立子问题进行化简：\n1. Leader 选举：采用随机超时（Randomized Election Timeout）防止选票瓜分；\n2. 日志复制：Leader 强制从属节点与自身日志完全一致；\n3. 安全性：选举限制确保只有包含所有已提交日志的节点才具备当选资格。",
+          thoughts: [],
+          createdAt: new Date(Date.now() - 3600e3 * 24).toISOString(),
+        },
+        {
+          id: "note_sample_3",
+          schemaVersion: 3,
+          source: "DeepSeek",
+          conversationTitle: "大模型提示词工程思考",
+          contentMarkdown: "优秀的 System Prompt 应当扮演准绳角色，固化推理框架与输出类型契约；而 User Prompt 应当动态装配宏观背景画像与微观上下文线索，形成苏格拉底式的思辨闭环。",
+          thoughts: [],
+          createdAt: new Date(Date.now() - 3600e3 * 48).toISOString(),
+        }
+      ];
+
+      function syncStatusUI() {
+        const key = localStorage.getItem("aidn_m_deepseek_key") || "";
+        const textEl = deepseekStatusEl.querySelector(".status-text");
+        if (key.trim()) {
+          deepseekStatusEl.className = "deepseek-status connected";
+          if (textEl) textEl.textContent = "DEEPSEEK: 已配置";
+          deepseekStatusEl.title = "已配置 API Key，点击修改";
+        } else {
+          deepseekStatusEl.className = "deepseek-status unconfigured";
+          if (textEl) textEl.textContent = "DEEPSEEK: 启发式模式";
+          deepseekStatusEl.title = "未配置 API Key（使用本地启发式出题），点击配置";
+        }
+      }
+
+      function getDeepSeekClient() {
+        const apiKey = localStorage.getItem("aidn_m_deepseek_key") || "";
+        const baseUrl = localStorage.getItem("aidn_m_deepseek_url") || "https://api.deepseek.com/v1";
+        return AIDN.llm.createDeepSeekClient({ apiKey, baseUrl });
+      }
+
+      async function renderIssue(issue, note) {
+        currentIssue = issue;
+        currentTargetNote = note;
+
+        recallLeadSource.textContent = issue.leadSource || `${note.source} · 讨论存录`;
+        recallQ1Title.textContent = issue.q1?.title || "";
+        recallQ1Sub.textContent = issue.q1?.sub || "";
+        recallClueText.textContent = issue.q1?.clue || "回想讨论中的核心边界与设计因果。";
+        recallAnchorText.textContent = issue.q1?.anchor || "核心业务规则不可动摇。";
+
+        recallOriginalText.innerHTML = "";
+        recallOriginalText.appendChild(renderMarkdown(note.contentMarkdown || note.contentText));
+
+        recallQ2Title.textContent = issue.q2?.title || "概念辨析";
+        recallQ2Text.textContent = issue.q2?.body || "";
+
+        recallQ3Title.textContent = issue.q3?.title || "微言速测";
+        recallQ3Text.textContent = issue.q3?.body || "";
+
+        // 状态机重置 (Folded / ClueHidden)
+        recallClueBox.classList.add("hidden");
+        recallClueBtn.textContent = "研读思考线索 ✦";
+
+        recallOriginalBox.classList.add("hidden");
+        recallUnfoldBtn.textContent = "翻阅号外原文对照 ↓";
+
+        recallQ2Body.classList.add("hidden");
+        recallQ2Toggle.textContent = "查看概念解析 ↓";
+
+        recallQ3Body.classList.add("hidden");
+        recallQ3Toggle.textContent = "揭晓快测答案 ↓";
+
+        recallThoughtInput.value = "";
+        recallThoughtHint.textContent = "";
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function shuffleIssue() {
+        if (currentNotes.length === 0) return;
+        const randIdx = Math.floor(Math.random() * currentNotes.length);
+        const targetNote = currentNotes[randIdx];
+
+        const groupKey = AIDN.group.groupKeyOf(targetNote);
+        const convNotes = currentNotes.filter((n) => AIDN.group.groupKeyOf(n) === groupKey);
+
+        const client = getDeepSeekClient();
+        const issue = await client.generateRecallIssue({
+          seriesName: targetNote.conversationTitle,
+          source: targetNote.source,
+          notes: convNotes.length > 0 ? convNotes : [targetNote],
+          targetNoteId: targetNote.id,
+        });
+
+        renderIssue(issue, targetNote);
+      }
+
+      // 交互行为绑定
+      recallClueBtn.addEventListener("click", () => {
+        const isHidden = recallClueBox.classList.toggle("hidden");
+        recallClueBtn.textContent = isHidden ? "研读思考线索 ✦" : "隐去思考线索";
+      });
+
+      recallUnfoldBtn.addEventListener("click", () => {
+        const isHidden = recallOriginalBox.classList.toggle("hidden");
+        recallUnfoldBtn.textContent = isHidden ? "翻阅号外原文对照 ↓" : "收拢号外原文 ↑";
+      });
+
+      recallQ2Toggle.addEventListener("click", () => {
+        const isHidden = recallQ2Body.classList.toggle("hidden");
+        recallQ2Toggle.textContent = isHidden ? "查看概念解析 ↓" : "收起概念解析";
+      });
+
+      recallQ3Toggle.addEventListener("click", () => {
+        const isHidden = recallQ3Body.classList.toggle("hidden");
+        recallQ3Toggle.textContent = isHidden ? "揭晓快测答案 ↓" : "收起快测答案";
+      });
+
+      recallThoughtSubmit.addEventListener("click", async () => {
+        const text = recallThoughtInput.value.trim();
+        if (!text || !currentTargetNote) return;
+        const newThought = AIDN.note.createThought(text);
+        currentTargetNote.thoughts = [...(currentTargetNote.thoughts || []), newThought];
+        await repo.update(currentTargetNote.id, { thoughts: currentTargetNote.thoughts });
+        recallThoughtInput.value = "";
+        recallThoughtHint.textContent = "随笔批注已沉淀并回流！";
+        setTimeout(() => { recallThoughtHint.textContent = ""; }, 2500);
+      });
+
+      recallShuffleBtn.addEventListener("click", shuffleIssue);
+
+      // 设置抽屉打开/关闭
+      function openDrawer() {
+        storedCountEl.textContent = String(currentNotes.length);
+        mKeyInput.value = localStorage.getItem("aidn_m_deepseek_key") || "";
+        mUrlInput.value = localStorage.getItem("aidn_m_deepseek_url") || "https://api.deepseek.com/v1";
+        drawerOverlay.classList.remove("hidden");
+        drawer.classList.remove("hidden");
+      }
+      function closeDrawer() {
+        drawerOverlay.classList.add("hidden");
+        drawer.classList.add("hidden");
+      }
+      openSettingsBtn.addEventListener("click", openDrawer);
+      deepseekStatusEl.addEventListener("click", openDrawer);
+      closeDrawerBtn.addEventListener("click", closeDrawer);
+      drawerOverlay.addEventListener("click", closeDrawer);
+
+      mSaveKeyBtn.addEventListener("click", () => {
+        localStorage.setItem("aidn_m_deepseek_key", mKeyInput.value.trim());
+        localStorage.setItem("aidn_m_deepseek_url", mUrlInput.value.trim() || "https://api.deepseek.com/v1");
+        syncStatusUI();
+        closeDrawer();
+      });
+
+      // 导入 PC 端导出的 JSON 档案
+      jsonFileInput.addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        importStatusEl.textContent = "导入解析中…";
+        try {
+          const text = await file.text();
+          const list = JSON.parse(text);
+          if (Array.isArray(list) && list.length > 0) {
+            await repo.clear();
+            for (const item of list) {
+              await repo.save(AIDN.note.migrate(item) || AIDN.note.createNote(item));
+            }
+            currentNotes = await repo.list();
+            importStatusEl.textContent = `成功导入 ${currentNotes.length} 篇！`;
+            storedCountEl.textContent = String(currentNotes.length);
+            shuffleIssue();
+          } else {
+            importStatusEl.textContent = "文件内没有有效笔记数据";
+          }
+        } catch (err) {
+          importStatusEl.textContent = "导入失败: " + err.message;
+        }
+      });
+
+      mResetSampleBtn.addEventListener("click", async () => {
+        await repo.clear();
+        for (const item of PRESET_SAMPLE_NOTES) {
+          await repo.save(AIDN.note.createNote(item));
+        }
+        currentNotes = await repo.list();
+        storedCountEl.textContent = String(currentNotes.length);
+        importStatusEl.textContent = "已重载 3 篇经典示范笔记";
+        shuffleIssue();
+      });
+
+      // 初始化
+      async function init() {
+        syncStatusUI();
+        currentNotes = await repo.list();
+        if (currentNotes.length === 0) {
+          // 首次打开自动载入示例
+          for (const item of PRESET_SAMPLE_NOTES) {
+            await repo.save(AIDN.note.createNote(item));
+          }
+          currentNotes = await repo.list();
+        }
+        storedCountEl.textContent = String(currentNotes.length);
+        shuffleIssue();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

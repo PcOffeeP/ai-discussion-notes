@@ -29,6 +29,45 @@
     };
   }
 
+  // 移动端/Web/PWA：包 window.localStorage 实现，提供与 chrome.storage 统一的 KV 端口
+  function createLocalStorageKV(prefix = "aidn_") {
+    return {
+      async get(keys) {
+        if (typeof localStorage === "undefined") return {};
+        if (keys == null) {
+          const out = {};
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(prefix)) {
+              try {
+                out[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k));
+              } catch (_) {
+                out[k.slice(prefix.length)] = localStorage.getItem(k);
+              }
+            }
+          }
+          return out;
+        }
+        const list = Array.isArray(keys) ? keys : [keys];
+        const out = {};
+        for (const k of list) {
+          const val = localStorage.getItem(prefix + k);
+          if (val != null) {
+            try { out[k] = JSON.parse(val); } catch (_) { out[k] = val; }
+          }
+        }
+        return out;
+      },
+      async set(items) {
+        if (typeof localStorage === "undefined") return;
+        for (const [k, v] of Object.entries(items || {})) {
+          localStorage.setItem(prefix + k, JSON.stringify(v));
+        }
+      },
+    };
+  }
+
   AIDN.createChromeKV = createChromeKV;
   AIDN.createMemoryKV = createMemoryKV;
+  AIDN.createLocalStorageKV = createLocalStorageKV;
 })(typeof self !== "undefined" ? self : globalThis);
