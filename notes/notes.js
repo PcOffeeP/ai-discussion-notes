@@ -31,6 +31,8 @@
   const syncTokenInput = document.getElementById("sync-token-input");
   const syncNowBtn = document.getElementById("sync-now-btn");
   const syncStatusMsg = document.getElementById("sync-status-msg");
+  const testDeepSeekBtn = document.getElementById("test-deepseek-btn");
+  const deepseekTestMsg = document.getElementById("deepseek-test-msg");
 
   const recallOverlay = document.getElementById("recall-overlay");
   const recallModal = document.getElementById("recall-modal");
@@ -637,11 +639,34 @@
   document.getElementById("settings-close").addEventListener("click", closeSettings);
   overlay.addEventListener("click", closeSettings);
 
-  function syncDeepSeekStatus(settings) {
+  // 点击顶部 DeepSeek 状态标签直接唤起设置抽屉并聚焦 API 输入框
+  if (deepseekStatusEl) {
+    deepseekStatusEl.addEventListener("click", () => {
+      openSettings();
+      if (deepseekKeyInput) deepseekKeyInput.focus();
+    });
+  }
+
+  function syncDeepSeekStatus(settings, overrideState) {
     if (!deepseekStatusEl) return;
     const textEl = deepseekStatusEl.querySelector(".status-text");
-    if (textEl) {
-      textEl.textContent = settings?.deepseekApiKey ? "DEEPSEEK: 已连接" : "DEEPSEEK: 就绪";
+
+    if (overrideState === "error") {
+      deepseekStatusEl.className = "deepseek-status error";
+      if (textEl) textEl.textContent = "DEEPSEEK: 连接异常";
+      deepseekStatusEl.title = "DeepSeek API 验证失败，点击打开设置检查 Key 与网络";
+      return;
+    }
+
+    const hasKey = Boolean(settings?.deepseekApiKey && settings.deepseekApiKey.trim());
+    if (hasKey) {
+      deepseekStatusEl.className = "deepseek-status connected";
+      if (textEl) textEl.textContent = "DEEPSEEK: 已配置";
+      deepseekStatusEl.title = `DeepSeek API 已配置 (模型: ${settings.deepseekModel || "deepseek-chat"})，点击修改设置`;
+    } else {
+      deepseekStatusEl.className = "deepseek-status unconfigured";
+      if (textEl) textEl.textContent = "DEEPSEEK: 未配置";
+      deepseekStatusEl.title = "未配置 API Key（当前使用启发式出题），点击打开设置进行配置";
     }
   }
 
@@ -655,6 +680,7 @@
     };
     const s = await aidn.advanced.settings?.patch(patch);
     syncDeepSeekStatus(s);
+    return s;
   }
 
   if (deepseekKeyInput) deepseekKeyInput.addEventListener("change", saveDeepSeekSettings);
@@ -662,6 +688,35 @@
   if (deepseekModelInput) deepseekModelInput.addEventListener("change", saveDeepSeekSettings);
   if (syncEndpointInput) syncEndpointInput.addEventListener("change", saveDeepSeekSettings);
   if (syncTokenInput) syncTokenInput.addEventListener("change", saveDeepSeekSettings);
+
+  if (testDeepSeekBtn) {
+    testDeepSeekBtn.addEventListener("click", async () => {
+      const key = deepseekKeyInput?.value.trim();
+      const baseUrl = deepseekUrlInput?.value.trim() || "https://api.deepseek.com/v1";
+      const model = deepseekModelInput?.value.trim() || "deepseek-chat";
+
+      if (!key) {
+        if (deepseekTestMsg) deepseekTestMsg.textContent = "请先填写 API Key";
+        if (deepseekKeyInput) deepseekKeyInput.focus();
+        syncDeepSeekStatus({ deepseekApiKey: "" });
+        return;
+      }
+
+      if (deepseekTestMsg) deepseekTestMsg.textContent = "验证中…";
+      try {
+        testDeepSeekBtn.disabled = true;
+        await saveDeepSeekSettings();
+        await aidn.advanced.testDeepSeek({ apiKey: key, baseUrl, model });
+        if (deepseekTestMsg) deepseekTestMsg.textContent = "连接成功 ✓";
+        syncDeepSeekStatus({ deepseekApiKey: key, deepseekModel: model });
+      } catch (err) {
+        if (deepseekTestMsg) deepseekTestMsg.textContent = "验证失败: " + (err.message || err);
+        syncDeepSeekStatus({ deepseekApiKey: key }, "error");
+      } finally {
+        testDeepSeekBtn.disabled = false;
+      }
+    });
+  }
 
   if (syncNowBtn) {
     syncNowBtn.addEventListener("click", async () => {

@@ -184,9 +184,47 @@
       }
     }
 
+    /**
+     * 测试 API 连接与鉴权有效性
+     */
+    async function testConnection(params = {}) {
+      const apiKey = (params.apiKey !== undefined ? params.apiKey : defaultApiKey).trim();
+      const baseUrl = (params.baseUrl || defaultBaseUrl).replace(/\/+$/, "");
+      const model = params.model || defaultModel;
+
+      if (!apiKey) {
+        throw new Error("请先填写 DeepSeek API Key");
+      }
+      if (!fetchFn) {
+        throw new Error("当前环境未支持网络请求");
+      }
+
+      const endpoint = `${baseUrl}/chat/completions`;
+      const resp = await fetchFn(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 5,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => "");
+        throw new Error(`连接失败 [HTTP ${resp.status}]: ${errText.slice(0, 150)}`);
+      }
+
+      return { ok: true };
+    }
+
     return {
       generateRecallIssue,
       generateCognitiveProfile,
+      testConnection,
       buildHeuristicFallbackIssue,
       buildHeuristicFallbackProfile,
     };

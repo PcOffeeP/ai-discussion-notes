@@ -76,6 +76,17 @@
         }
         throw new Error("DeepSeek 客户端未加载");
       },
+      "deepseek.test": async (params) => {
+        const settings = await getSettings();
+        const apiKey = params?.apiKey !== undefined ? params.apiKey : settings.deepseekApiKey;
+        const baseUrl = params?.baseUrl || settings.deepseekBaseUrl;
+        const model = params?.model || settings.deepseekModel;
+        if (AIDN.llm?.createDeepSeekClient) {
+          const client = AIDN.llm.createDeepSeekClient({ apiKey, baseUrl, model });
+          return client.testConnection({ apiKey, baseUrl, model });
+        }
+        throw new Error("DeepSeek 客户端未加载");
+      },
       "sync.now": async (params) => {
         const settings = await getSettings();
         if (typeof repo.sync === "function") {

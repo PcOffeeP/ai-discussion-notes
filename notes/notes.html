@@ -10,9 +10,9 @@
   <header class="topbar">
     <div class="topbar-left">
       <h1 class="brand">《AI 讨论纪事报》<span class="brand-sub">// 档案库</span></h1>
-      <div id="deepseek-status" class="deepseek-status" title="DeepSeek 认知编排状态">
+      <div id="deepseek-status" class="deepseek-status unconfigured" title="点击配置 DeepSeek API Key" role="button" tabindex="0">
         <span class="status-dot"></span>
-        <span class="status-text">DEEPSEEK: 就绪</span>
+        <span class="status-text">DEEPSEEK: 未配置</span>
       </div>
     </div>
     <div class="topbar-actions">
@@ -118,6 +118,10 @@
         <span class="form-label">模型</span>
         <input type="text" id="deepseek-model-input" placeholder="deepseek-chat" />
       </label>
+      <div class="settings-actions">
+        <button id="test-deepseek-btn" class="ghost-btn">测试 API 连接</button>
+        <span id="deepseek-test-msg" class="sync-status-msg"></span>
+      </div>
     </section>
 
     <section class="settings-section">

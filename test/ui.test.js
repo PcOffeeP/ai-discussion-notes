@@ -366,9 +366,16 @@ test("notes 页面 UI 冒烟", async (t) => {
     assert.ok(volEl && volEl.textContent.includes("总第"));
     assert.ok(document.querySelector(".broadsheet-masthead .masthead-title"));
 
-    // DeepSeek 状态标签
+    // DeepSeek 状态标签：未配置时明确显示「DEEPSEEK: 未配置」
     const statusEl = document.getElementById("deepseek-status");
-    assert.ok(statusEl && statusEl.textContent.includes("DEEPSEEK"));
+    assert.ok(statusEl && statusEl.textContent.includes("DEEPSEEK: 未配置"));
+    assert.ok(statusEl.classList.contains("unconfigured"));
+
+    // 点击 DeepSeek 状态标签直接唤起设置抽屉
+    statusEl.click();
+    assert.ok(!document.getElementById("settings-panel").classList.contains("hidden"));
+    document.getElementById("settings-close").click();
+    assert.ok(document.getElementById("settings-panel").classList.contains("hidden"));
 
     // 认知雷达
     const radar = document.getElementById("cognitive-radar");

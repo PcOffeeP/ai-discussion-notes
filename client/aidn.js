@@ -95,6 +95,14 @@
         async clearAll() {
           return repo.clear();
         },
+        async testDeepSeek(params) {
+          if (repo.testDeepSeek) {
+            return repo.testDeepSeek(params);
+          }
+          const client = AIDN.llm?.createDeepSeekClient ? AIDN.llm.createDeepSeekClient(params) : null;
+          if (client) return client.testConnection(params);
+          throw new Error("DeepSeek 客户端不可用");
+        },
         settings: repo.getSettings
           ? {
               get: () => repo.getSettings(),

@@ -31,6 +31,7 @@
       getRecallIssue: (params) => call("recall.issue", params),
       getCognitiveProfile: (params) => call("recall.profile", params),
       syncNow: (params) => call("sync.now", params),
+      testDeepSeek: (params) => call("deepseek.test", params),
     };
   }
 

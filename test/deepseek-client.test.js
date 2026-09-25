@@ -119,3 +119,31 @@ test("deepseekClient: 提供 API Key 与 fetchFn 时发起真实 HTTP 调用并�
   assert.equal(issue.issueId, "issue_net_01");
   assert.equal(issue.q1.targetNoteId, "n_net_1");
 });
+
+test("deepseekClient: testConnection 校验有效性", async () => {
+  const mockFetchSuccess = async () => ({ ok: true, json: async () => ({}) });
+  const clientSuccess = AIDN.llm.createDeepSeekClient({
+    apiKey: "sk-valid",
+    fetchFn: mockFetchSuccess,
+  });
+  const res = await clientSuccess.testConnection();
+  assert.equal(res.ok, true);
+
+  // 空 Key 抛出明确异常
+  const clientEmpty = AIDN.llm.createDeepSeekClient({ apiKey: "", fetchFn: mockFetchSuccess });
+  await assert.rejects(async () => {
+    await clientEmpty.testConnection();
+  }, /请先填写 DeepSeek API Key/);
+
+  // 鉴权失败报错
+  const mockFetchFail = async () => ({
+    ok: false,
+    status: 401,
+    text: async () => "Authentication Fails (Invalid API Key)",
+  });
+  const clientFail = AIDN.llm.createDeepSeekClient({ apiKey: "sk-bad", fetchFn: mockFetchFail });
+  await assert.rejects(async () => {
+    await clientFail.testConnection();
+  }, /连接失败 \[HTTP 401\]/);
+});
+

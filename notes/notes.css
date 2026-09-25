@@ -110,20 +110,56 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   background: var(--newsprint-dim);
   border: 1px solid var(--border-subtle);
   border-radius: 0px;
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
 }
+.deepseek-status:hover {
+  border-color: var(--ink-black);
+  background: var(--newsprint-white);
+}
+
 .status-dot {
   width: 6px;
   height: 6px;
-  background: #1b8a5a;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
+  background: var(--ink-faint);
+}
+
+/* 状态色分级：未配置 / 已配置 / 异常 */
+.deepseek-status.unconfigured {
+  color: var(--ink-faint);
+  border-color: var(--border-subtle);
+}
+.deepseek-status.unconfigured .status-dot {
+  background: var(--ink-faint);
+}
+
+.deepseek-status.connected {
+  color: #1b8a5a;
+  border-color: #cde7d8;
+  background: #f0f8f3;
+}
+.deepseek-status.connected .status-dot {
+  background: #1b8a5a;
+}
+
+.deepseek-status.error {
+  color: var(--crimson-red);
+  border-color: #f0caca;
+  background: var(--crimson-soft);
+}
+.deepseek-status.error .status-dot {
+  background: var(--crimson-red);
 }
 
 .topbar-actions {
