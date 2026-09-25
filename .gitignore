@@ -3,6 +3,7 @@ node_modules/
 
 # Mobile and build artifacts
 dist-mobile/
+apk/
 data/
 *.log
 
