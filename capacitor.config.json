@@ -1,0 +1,9 @@
+{
+  "appId": "com.aidiscussionnotes.app",
+  "appName": "AI讨论纪事报",
+  "webDir": "dist-mobile",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

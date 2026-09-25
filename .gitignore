@@ -1,2 +1,17 @@
 node_modules/
 .DS_Store
+
+# Mobile and build artifacts
+dist-mobile/
+data/
+*.log
+
+# Android build outputs & local config
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/local.properties
+android/captures/
