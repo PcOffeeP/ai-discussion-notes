@@ -23,7 +23,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 16px;
+      padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 16px 10px;
       background: var(--newsprint-bg);
       border-bottom: 1px solid var(--border-subtle);
     }
@@ -231,8 +231,11 @@
       <p class="section-desc">电脑插件与手机 App 填入相同 Token，随时随地自动双向增量同步。</p>
       <label class="form-row">
         <span class="form-label">同步地址</span>
-        <input type="url" id="m-sync-endpoint" placeholder="http://<公网IP或域名>:3000/api/sync" />
+        <input type="url" id="m-sync-endpoint" placeholder="https://<你的服务名>.onrender.com" />
       </label>
+      <div style="font-size: 11px; color: var(--ink-faint); margin: -4px 0 8px; line-height: 1.4;">
+        💡 提示：若使用 Render 托管服务，直接粘贴域名即可（代码已内置自动补全 <code>/api/sync</code> 路由）。
+      </div>
       <label class="form-row">
         <span class="form-label">私密 Token</span>
         <input type="password" id="m-sync-token" placeholder="你的专属 Secret Token" />

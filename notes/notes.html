@@ -129,8 +129,11 @@
       <p class="section-desc">实现电脑浏览器扩展与手机端复习客户端的双向增量同步。</p>
       <label class="form-row">
         <span class="form-label">同步网关</span>
-        <input type="url" id="sync-endpoint-input" placeholder="https://sync.example.com/api/sync" />
+        <input type="url" id="sync-endpoint-input" placeholder="https://<你的服务名>.onrender.com" />
       </label>
+      <div style="font-size: 11px; color: var(--ink-faint); margin: -4px 0 8px; line-height: 1.4;">
+        💡 提示：若使用 Render 托管服务，直接粘贴域名即可（自动补全 <code>/api/sync</code> 路由）。
+      </div>
       <label class="form-row">
         <span class="form-label">用户 Token</span>
         <input type="password" id="sync-token-input" placeholder="Bearer 鉴权凭证" />
