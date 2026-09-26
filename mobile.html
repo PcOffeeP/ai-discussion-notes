@@ -15,11 +15,12 @@
       height: 100dvh;
       margin: 0;
       padding: 0;
-      background: var(--newsprint-bg);
+      background-color: var(--newsprint-bg);
+      background-image: var(--paper-grain);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
-    /* 移动端整版一体化外壳：100% 满屏无滚动设计 */
+    /* 移动端整版一体化外壳：100% 满屏设计 */
     .mobile-shell {
       height: 100%;
       height: 100dvh;
@@ -29,13 +30,15 @@
       flex-direction: column;
       justify-content: space-between;
       box-sizing: border-box;
-      background: var(--newsprint-white);
+      background-color: var(--newsprint-white);
+      background-image: var(--paper-grain);
       border-left: 1px solid var(--border-subtle);
       border-right: 1px solid var(--border-subtle);
       padding: calc(6px + env(safe-area-inset-top, 0px)) 12px calc(6px + env(safe-area-inset-bottom, 0px));
+      overflow: hidden;
     }
 
-    /* 1. 统一部署报头 (Unified Masthead) */
+    /* 1. 统一部署报头 (Unified Broadsheet Masthead - 防折行与纯铅印规整) */
     .recall-masthead-unified {
       flex-shrink: 0;
       padding-bottom: 2px;
@@ -45,7 +48,7 @@
       justify-content: space-between;
       align-items: center;
       font-family: var(--font-mono-meta);
-      font-size: 10px;
+      font-size: 11px;
       color: var(--ink-muted);
       padding-bottom: 2px;
     }
@@ -57,38 +60,84 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 1px 0 3px;
+      margin: 2px 0 3px;
+      gap: 6px;
     }
     .masthead-title-wrap {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      flex-shrink: 0;
     }
     .masthead-title {
       font-family: var(--font-serif-masthead);
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 900;
       margin: 0;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.2px;
       color: var(--ink-black);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+    .recall-stamp {
+      display: inline-flex;
+      align-items: center;
+      transform: rotate(-3deg);
+      user-select: none;
+      line-height: 1;
+      margin-left: 2px;
+    }
+    .recall-stamp svg {
+      display: block;
     }
     .masthead-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      flex-shrink: 0;
     }
-    .masthead-settings-btn {
-      border: 1px solid var(--border-dark);
-      background: transparent;
+    .deepseek-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      background: var(--newsprint-dim);
+      border: 1px solid var(--border-subtle);
+      border-radius: 0;
       font-family: var(--font-mono-meta);
-      padding: 2px 7px;
       font-size: 10.5px;
       color: var(--ink-black);
       cursor: pointer;
-      border-radius: 2px;
       height: 22px;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .deepseek-status .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 0;
+      background: var(--ink-faint);
+      display: inline-block;
+    }
+    .deepseek-status.connected .status-dot {
+      background: var(--crimson-red);
+    }
+    .masthead-settings-btn {
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      padding: 0;
+      color: var(--ink-black);
+      cursor: pointer;
+      border-radius: 0;
+      height: 22px;
+      width: 24px;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .masthead-settings-btn svg {
+      display: block;
     }
     .masthead-settings-btn:hover {
       background: var(--newsprint-dim);
@@ -100,20 +149,21 @@
       margin: 2px 0 4px;
     }
 
-    /* 2. 三大自测栏目中继区 (Recall Board - 满屏无滚动) */
+    /* 2. 三大自测栏目中继区 (Recall Board - 纯粹单层滚动流，严整落格) */
     .recall-board {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-evenly;
+      justify-content: flex-start;
+      gap: 10px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 2px 0;
+      padding: 2px 0 10px;
     }
     .recall-column {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
     }
     .column-meta {
       display: flex;
@@ -123,31 +173,31 @@
     }
     .column-kicker {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       text-transform: uppercase;
       color: var(--crimson-red);
       font-weight: 700;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
     }
     .column-source {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       color: var(--ink-muted);
     }
     .column-title-lead {
       font-family: var(--font-serif-masthead);
-      font-size: 14.5px;
+      font-size: 17.5px;
       font-weight: 900;
       line-height: 1.35;
-      margin: 0 0 2px;
+      margin: 0 0 3px;
       color: var(--ink-black);
     }
     .column-sub-lead {
-      font-size: 11px;
+      font-size: 12px;
       font-style: italic;
       color: var(--ink-muted);
-      margin: 0 0 5px;
-      line-height: 1.3;
+      margin: 0 0 6px;
+      line-height: 1.4;
     }
     .column-actions {
       display: flex;
@@ -155,20 +205,20 @@
     }
     .column-title {
       font-family: var(--font-serif-masthead);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       line-height: 1.35;
-      margin: 0 0 3px;
+      margin: 0 0 4px;
       color: var(--ink-black);
     }
     .compact-btn {
       border: 1px solid var(--ink-black);
       background: var(--newsprint-white);
-      padding: 3px 8px;
-      font-size: 11px;
+      padding: 4px 9px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: 0;
       font-family: var(--font-mono-meta);
     }
     .compact-btn:hover, .compact-btn:active {
@@ -177,159 +227,202 @@
     }
     .compact-reveal-btn {
       align-self: flex-start;
-      background: none;
-      border: 1px dashed var(--border-dark);
+      background: transparent;
+      border: 1px solid var(--border-subtle);
       font-family: var(--font-mono-meta);
-      font-size: 10.5px;
-      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
       color: var(--ink-muted);
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: 0;
+      transition: all 0.15s ease;
     }
     .compact-reveal-btn:hover {
       color: var(--ink-black);
       border-color: var(--ink-black);
+      background: var(--newsprint-dim);
     }
     .column-divider {
+      position: relative;
       height: 1px;
-      border-bottom: 1px dashed var(--border-subtle);
-      margin: 3px 0;
+      background: var(--border-subtle);
+      margin: 4px 0;
       flex-shrink: 0;
     }
+    .column-divider::after {
+      content: "❖";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--newsprint-white);
+      padding: 0 6px;
+      font-size: 8px;
+      color: var(--ink-faint);
+    }
 
-    /* 展开区样式 */
+    /* 展开区样式 - 纸墨浸润感与去浮夸装饰 */
     .recall-clue-box {
-      background: var(--newsprint-dim);
-      border-left: 3px solid var(--ink-black);
-      padding: 6px 10px;
+      background: rgba(26, 25, 24, 0.035);
+      border-left: 2.5px solid var(--ink-black);
+      padding: 8px 12px;
       margin-top: 6px;
     }
     .clue-label {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--ink-muted);
       display: block;
+      letter-spacing: 0.5px;
     }
     .clue-text {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--ink-black);
-      margin: 2px 0 0;
-      line-height: 1.4;
+      margin: 3px 0 0;
+      line-height: 1.55;
     }
     .recall-original-box {
-      background: var(--newsprint-dim);
+      background: rgba(26, 25, 24, 0.025);
       border: 1px solid var(--border-subtle);
       padding: 10px 12px;
       margin-top: 6px;
-      max-height: 180px;
-      overflow-y: auto;
     }
     .recall-original-content {
       font-family: var(--font-serif-body);
-      font-size: 12.5px;
+      font-size: 13px;
       line-height: 1.6;
       color: var(--ink-black);
       margin-bottom: 8px;
     }
     .recall-anchor-card {
-      background: rgba(184, 51, 42, 0.05);
-      border-left: 2px solid var(--crimson-red);
-      padding: 5px 8px;
+      background: #232220; /* 暖调深炭墨，非死黑 */
+      color: #f8f6f0;
+      border: 1px solid #363430;
+      border-left: 3px solid var(--crimson-red);
+      padding: 9px 12px;
       margin-bottom: 8px;
+      border-radius: 0;
     }
     .anchor-label {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 10.5px;
       font-weight: 700;
-      color: var(--crimson-red);
+      color: #e28a7a;
       display: block;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
     }
     .anchor-text {
-      font-size: 11.5px;
-      color: var(--ink-black);
-      margin: 2px 0 0;
+      font-size: 13px;
+      font-family: var(--font-serif-body);
+      color: #f8f6f0;
+      margin: 3px 0 0;
+      line-height: 1.55;
     }
     .recall-thought-box {
-      border-top: 1px dashed var(--border-subtle);
+      border-top: 1px solid var(--border-subtle);
       padding-top: 6px;
     }
     .thought-label {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       color: var(--ink-muted);
       display: block;
       margin-bottom: 4px;
     }
     .thought-input-row {
       display: flex;
-      gap: 4px;
+      gap: 6px;
     }
     .thought-input-row input {
       flex: 1;
-      font-size: 11px;
-      padding: 3px 6px;
-      border: 1px solid var(--border-dark);
+      font-size: 16px; /* 防止 iOS 视口聚焦放大 */
+      padding: 4px 8px;
+      border: 1px solid var(--border-subtle);
       background: var(--newsprint-white);
+      border-radius: 0;
+      box-sizing: border-box;
+      font-family: var(--font-serif-body);
+      color: var(--ink-black);
+      transition: border-color 0.15s ease;
+    }
+    .thought-input-row input:focus {
+      border-color: var(--ink-black);
+      outline: none;
     }
     .thought-input-row button {
-      padding: 3px 8px;
-      font-size: 11px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 0;
+      background: var(--crimson-red);
+      color: #fff;
+      border: 1px solid var(--crimson-red);
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .thought-input-row button:hover {
+      background: var(--crimson-hover);
     }
     .recall-thought-hint {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       color: var(--crimson-red);
       display: block;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .recall-reveal-body {
-      background: var(--newsprint-dim);
-      border-left: 2px solid var(--ink-black);
-      padding: 5px 8px;
+      background: rgba(163, 29, 29, 0.035);
+      border-left: 2.5px solid var(--crimson-red);
+      padding: 6px 10px;
       margin-top: 4px;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 13px;
+      line-height: 1.5;
       color: var(--ink-black);
     }
     .recall-reveal-body p {
       margin: 0;
     }
 
-    /* 3. 底部通栏换版条 (Bottom Action Bar) */
+    /* 3. 底部通栏换版条 (Bottom Action Bar) - 剥离阴影与圆角，重现纯正直角铅印 */
     .recall-footer-unified {
       flex-shrink: 0;
       padding-top: 2px;
     }
     .recall-shuffle-btn {
       width: 100%;
-      padding: 8px 12px;
+      padding: 9px 12px;
       background: var(--crimson-red);
-      color: #fff;
-      border: 1px solid #7d1c15;
+      color: #ffffff;
+      border: 1px solid var(--crimson-red);
+      outline: none;
       font-family: var(--font-serif-masthead);
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 700;
+      letter-spacing: 0.8px;
       cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-      border-radius: 2px;
+      border-radius: 0;
+      box-shadow: none;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .recall-shuffle-btn:active {
-      background: #96251e;
+      background: var(--crimson-hover);
+      border-color: var(--crimson-hover);
       transform: translateY(1px);
     }
     .recall-footer-motto {
       font-family: var(--font-mono-meta);
-      font-size: 9.5px;
+      font-size: 11px;
       color: var(--ink-faint);
       margin: 3px 0 0;
       text-align: center;
     }
 
-    /* 抽屉样式保持 */
+    /* 抽屉样式直角与移动端表单防缩放 */
     .drawer-overlay {
       position: fixed;
       inset: 0;
@@ -349,6 +442,7 @@
       z-index: 201;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
       box-sizing: border-box;
+      border-radius: 0;
     }
     .drawer-title {
       font-family: var(--font-serif-masthead);
@@ -364,6 +458,7 @@
       position: relative;
       overflow: hidden;
       display: inline-block;
+      border-radius: 0;
     }
     .file-import-btn input[type="file"] {
       position: absolute;
@@ -374,6 +469,13 @@
       height: 100%;
       cursor: pointer;
     }
+    .form-row input {
+      font-size: 16px !important;
+      border-radius: 0 !important;
+    }
+    button, input, select, textarea {
+      border-radius: 0 !important;
+    }
   </style>
 </head>
 <body>
@@ -382,20 +484,31 @@
     <header class="recall-masthead-unified">
       <div class="masthead-meta-row">
         <span id="recall-masthead-date">甲辰年 · 讨论文汇</span>
-        <span class="masthead-badge">【头版号外自测】</span>
+        <span class="masthead-badge">【头版号外】</span>
         <span id="recall-issue-id">总第四十二期</span>
       </div>
       <div class="masthead-main-row">
         <div class="masthead-title-wrap">
           <h1 class="masthead-title">《AI 讨论纪事报》</h1>
-          <span class="recall-stamp">号外印章</span>
+          <span class="recall-stamp" title="头版号外">
+            <svg class="stamp-svg" viewBox="0 0 38 18" width="34" height="16" aria-label="号外">
+              <rect x="0.75" y="0.75" width="36.5" height="16.5" fill="none" stroke="#a31d1d" stroke-width="1.2"/>
+              <rect x="2.2" y="2.2" width="33.6" height="13.6" fill="rgba(163,29,29,0.06)" stroke="#a31d1d" stroke-width="0.5"/>
+              <text x="19" y="12" font-family="'Noto Serif SC', 'Songti SC', 'STSong', serif" font-size="10" font-weight="900" fill="#a31d1d" text-anchor="middle" letter-spacing="1.5">号外</text>
+            </svg>
+          </span>
         </div>
         <div class="masthead-actions">
           <div id="deepseek-status" class="deepseek-status unconfigured" title="点击配置 DeepSeek API">
             <span class="status-dot"></span>
-            <span class="status-text">DEEPSEEK</span>
+            <span class="status-text">DS·启发式</span>
           </div>
-          <button id="open-settings-btn" class="masthead-settings-btn" title="报刊设置与笔记库">⚙ 设置</button>
+          <button id="open-settings-btn" class="masthead-settings-btn" title="报刊设置与笔记库" aria-label="设置">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="2.5"/>
+              <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9"/>
+            </svg>
+          </button>
         </div>
       </div>
       <div class="oxford-rules-compact"></div>
@@ -406,7 +519,7 @@
       <!-- 栏目一：头版头条 -->
       <article class="recall-column lead-story">
         <div class="column-meta">
-          <span class="column-kicker">栏目一 · 头版头条</span>
+          <span class="column-kicker">【头版头条】· 专稿</span>
           <span class="column-source" id="recall-lead-source">ChatGPT · 讨论存录</span>
         </div>
         <h2 class="column-title-lead" id="recall-q1-title">论持久化模型映射为何绝不可外泄至外部适配器？</h2>
@@ -418,21 +531,21 @@
         </div>
 
         <div id="recall-clue-box" class="recall-clue-box hidden">
-          <span class="clue-label">// 思考线索 (CLUE):</span>
+          <span class="clue-label">✦ 思考线索</span>
           <p id="recall-clue-text" class="clue-text">回想持久化层对外暴露接口时，外部变动对领域核心造成的连锁反应。</p>
         </div>
 
         <div id="recall-original-box" class="recall-original-box hidden">
           <div class="recall-original-content note-md" id="recall-original-text"></div>
           <div class="recall-anchor-card">
-            <span class="anchor-label">// DEEPSEEK 记忆锚点:</span>
+            <span class="anchor-label">✦ 核心提炼锚点</span>
             <p id="recall-anchor-text" class="anchor-text">核心业务规则如磐石，数据库与外设皆流沙。</p>
           </div>
           <div class="recall-thought-box">
-            <span class="thought-label">随手记下新启示（批注回流）：</span>
+            <span class="thought-label">研读札记 · 随笔留痕</span>
             <div class="thought-input-row">
-              <input type="text" id="recall-thought-input" placeholder="输入反思与随感…" autocomplete="off" />
-              <button id="recall-thought-submit" class="crimson-btn">沉淀</button>
+              <input type="text" id="recall-thought-input" placeholder="写下当下的思辨反思…" autocomplete="off" />
+              <button id="recall-thought-submit" class="crimson-btn">收录</button>
             </div>
             <span id="recall-thought-hint" class="recall-thought-hint"></span>
           </div>
@@ -444,7 +557,7 @@
       <!-- 栏目二：报眼要闻 -->
       <article class="recall-column side-story">
         <div class="column-meta">
-          <span class="column-kicker">栏目二 · 报眼要闻</span>
+          <span class="column-kicker">【报眼要闻】· 辨析</span>
         </div>
         <h3 class="column-title" id="recall-q2-title">概念辨析：防腐层与普通 Data Mapper 有何本质区别？</h3>
         <button id="recall-q2-toggle" class="compact-reveal-btn">查看概念解析 ↓</button>
@@ -458,7 +571,7 @@
       <!-- 栏目三：微言速测 -->
       <article class="recall-column brief-dispatch">
         <div class="column-meta">
-          <span class="column-kicker">栏目三 · 微言速测</span>
+          <span class="column-kicker">【微言速测】· 快问</span>
         </div>
         <h3 class="column-title" id="recall-q3-title">数据库字段更名，领域逻辑代码是否应该修改？</h3>
         <button id="recall-q3-toggle" class="compact-reveal-btn">揭晓快测答案 ↓</button>
@@ -471,7 +584,7 @@
     <!-- 底部通栏换版操作 (Bottom Action Bar) -->
     <footer class="recall-footer-unified">
       <div class="oxford-rules-compact"></div>
-      <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一版号外自测 (换一批) ✦</button>
+      <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一期号外 ✦</button>
       <p class="recall-footer-motto">零打卡压力 · 随时翻阅重温以明心智</p>
     </footer>
   </div>
@@ -486,7 +599,7 @@
 
     <section class="settings-section">
       <h3>导入桌面端导出的笔记</h3>
-      <p class="section-desc">在电脑端「设置 → 导出笔记（JSON）」后，直接在此选取文件即可在手机离线自测。</p>
+      <p class="section-desc">从电脑端导出 JSON 档案后导入，即可离线翻阅与自测。</p>
       <div class="settings-actions">
         <label class="ghost-btn file-import-btn">
           <span>选择 JSON 档案导入</span>
@@ -501,13 +614,13 @@
 
     <section class="settings-section">
       <h3>个人专属云端同步</h3>
-      <p class="section-desc">电脑插件与手机 App 填入相同 Token，随时随地自动双向增量同步。</p>
+      <p class="section-desc">填入相同的专属 Secret Token，实现电脑与手机端自动双向增量同步。</p>
       <label class="form-row">
         <span class="form-label">同步地址</span>
         <input type="url" id="m-sync-endpoint" placeholder="https://<你的服务名>.onrender.com" />
       </label>
       <div style="font-size: 11px; color: var(--ink-faint); margin: -4px 0 8px; line-height: 1.4;">
-        💡 提示：若使用 Render 托管服务，直接粘贴域名即可（代码已内置自动补全 <code>/api/sync</code> 路由）。
+        提示：Render 托管服务直接填入域名即可，已自动补全 <code>/api/sync</code> 路由。
       </div>
       <label class="form-row">
         <span class="form-label">私密 Token</span>
@@ -521,7 +634,7 @@
 
     <section class="settings-section">
       <h3>DeepSeek 认知模型配置</h3>
-      <p class="section-desc">未配置时使用本地启发式智能出题；配置后走官方 API 实测深度出题。</p>
+      <p class="section-desc">未配置时由本地离线引擎出题；配置后启用官方深度推理模型。</p>
       <label class="form-row">
         <span class="form-label">API Key</span>
         <input type="password" id="m-deepseek-key" placeholder="sk-..." />
@@ -538,7 +651,7 @@
 
     <section class="settings-section">
       <h3>应用版本与在线升级</h3>
-      <p class="section-desc">直接在手机上一键检查并下载最新版，无需重复使用电脑传包安装。</p>
+      <p class="section-desc">一键检查并下载最新安装包，随时保持最新功能。</p>
       <div style="font-family: var(--font-mono-meta); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 8px;">
         当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">v0.4.0</strong>
       </div>
@@ -546,7 +659,7 @@
         <button id="check-update-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">检查新版本 ✦</button>
         <span id="update-status-msg" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
       </div>
-      <div id="update-action-box" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(184,51,42,0.06); border: 1px solid var(--border-dark);">
+      <div id="update-action-box" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(184,51,42,0.06); border: 1px solid var(--border-subtle);">
         <p id="update-notes-text" style="font-size: 12px; margin: 0 0 8px; line-height: 1.5; white-space: pre-line;"></p>
         <a id="download-apk-link" href="#" class="crimson-btn" style="display: inline-block; padding: 6px 14px; text-decoration: none; font-size: 12px;" target="_blank">手机立即下载新版 APK ↓</a>
       </div>
@@ -671,12 +784,12 @@
         const textEl = deepseekStatusEl.querySelector(".status-text");
         if (key.trim()) {
           deepseekStatusEl.className = "deepseek-status connected";
-          if (textEl) textEl.textContent = "DEEPSEEK: 已配置";
-          deepseekStatusEl.title = "已配置 API Key，点击修改";
+          if (textEl) textEl.textContent = "DS·API";
+          deepseekStatusEl.title = "已配置 DeepSeek API Key（点击修改）";
         } else {
           deepseekStatusEl.className = "deepseek-status unconfigured";
-          if (textEl) textEl.textContent = "DEEPSEEK: 启发式模式";
-          deepseekStatusEl.title = "未配置 API Key（使用本地启发式出题），点击配置";
+          if (textEl) textEl.textContent = "DS·启发式";
+          deepseekStatusEl.title = "未配置 API Key（使用本地启发式出题，点击配置）";
         }
       }
 
@@ -771,7 +884,7 @@
         currentTargetNote.thoughts = [...(currentTargetNote.thoughts || []), newThought];
         await repo.update(currentTargetNote.id, { thoughts: currentTargetNote.thoughts });
         recallThoughtInput.value = "";
-        recallThoughtHint.textContent = "随笔批注已沉淀并回流！";
+        recallThoughtHint.textContent = "研读札记已沉淀收录！";
         setTimeout(() => { recallThoughtHint.textContent = ""; }, 2500);
       });
 

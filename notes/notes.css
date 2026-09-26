@@ -2,10 +2,11 @@
    The Classic Broadsheet: 纸墨书卷气、牛津双线、直角纪律、首字下沉。 */
 
 :root {
-  /* ---------- 纸张表面 ---------- */
+  /* ---------- 纸张表面与物理质感 ---------- */
   --newsprint-bg: #f8f6f0;         /* 经典微黄新闻纸底色 */
   --newsprint-white: #ffffff;      /* 铅印内页纯白 */
   --newsprint-dim: #ece7db;        /* 报头、边栏与折页暗部 */
+  --paper-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 
   /* ---------- 墨水层次 ---------- */
   --ink-black: #1a1918;            /* 铅印浓黑主文字 (对比度 > 12:1) */
@@ -46,7 +47,8 @@
 
 body {
   margin: 0;
-  background: var(--newsprint-bg);
+  background-color: var(--newsprint-bg);
+  background-image: var(--paper-grain);
   color: var(--ink-black);
   font-family: var(--font-serif-body);
   font-size: 14px;
@@ -67,8 +69,22 @@ body {
 }
 
 .broadsheet-divider {
-  border-bottom: 1px dashed var(--border-subtle);
+  position: relative;
+  height: 1px;
+  background: var(--border-subtle);
   margin: 18px 0;
+  border: none;
+}
+.broadsheet-divider::after {
+  content: "❖";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--newsprint-bg);
+  padding: 0 8px;
+  font-size: 8px;
+  color: var(--ink-faint);
 }
 
 /* ---------- 顶栏 (Topbar) ---------- */
@@ -448,15 +464,15 @@ button {
   color: var(--ink-black);
 }
 .masthead-stamp {
-  font-family: var(--font-serif-body);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--crimson-red);
-  border: 1.5px solid var(--crimson-red);
-  padding: 2px 4px;
-  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
   transform: rotate(-3deg);
-  display: inline-block;
+  user-select: none;
+  line-height: 1;
+  margin-left: 4px;
+}
+.masthead-stamp svg {
+  display: block;
 }
 
 .masthead-motto {
@@ -628,7 +644,7 @@ button {
   margin: 16px 0 8px;
 }
 .note-md h1 { font-size: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px; }
-.note-md h2 { font-size: 16px; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 3px; }
+.note-md h2 { font-size: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 3px; }
 .note-md h3 { font-size: 14.5px; }
 .note-md h4 { font-size: 13.5px; }
 
@@ -716,7 +732,7 @@ button {
 
 .note-md hr {
   border: none;
-  border-bottom: 1px dashed var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
   margin: 14px 0;
 }
 
@@ -1037,12 +1053,15 @@ button {
   margin: 0;
 }
 .recall-stamp {
-  font-size: 10px;
-  color: #fff;
-  background: var(--crimson-red);
-  padding: 2px 5px;
-  letter-spacing: 1px;
-  transform: rotate(4deg);
+  display: inline-flex;
+  align-items: center;
+  transform: rotate(-3deg);
+  user-select: none;
+  line-height: 1;
+  margin-left: 2px;
+}
+.recall-stamp svg {
+  display: block;
 }
 .recall-motto {
   font-size: 12px;
@@ -1148,28 +1167,33 @@ button {
 }
 
 .recall-anchor-card {
-  background: var(--ink-black);
-  color: #fff;
+  background: #232220; /* 暖调深炭墨，非死黑 */
+  color: #f8f6f0;
+  border: 1px solid #363430;
+  border-left: 3px solid var(--crimson-red);
   padding: 10px 14px;
   margin-bottom: 14px;
-  border-left: 3px solid var(--crimson-red);
 }
 .anchor-label {
   font-family: var(--font-mono-meta);
-  font-size: 10px;
-  color: #aaa;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #e28a7a;
   display: block;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 .anchor-text {
   font-family: var(--font-serif-body);
   font-size: 13px;
   color: #f8f6f0;
   margin: 4px 0 0;
+  line-height: 1.55;
 }
 
 .recall-thought-box {
   padding-top: 10px;
-  border-top: 1px dashed var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
 }
 .thought-label {
   font-family: var(--font-mono-meta);

@@ -930,7 +930,7 @@
         await aidn.addThought(targetId, text);
         recallThoughtInput.value = "";
         if (recallThoughtHint) {
-          recallThoughtHint.textContent = "随笔批注已沉淀并回流至笔记！";
+          recallThoughtHint.textContent = "研读札记已沉淀收录！";
           setTimeout(() => { if (recallThoughtHint) recallThoughtHint.textContent = ""; }, 2500);
         }
         await refresh();

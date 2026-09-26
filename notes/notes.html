@@ -9,14 +9,14 @@
 <body>
   <header class="topbar">
     <div class="topbar-left">
-      <h1 class="brand">《AI 讨论纪事报》<span class="brand-sub">// 档案库</span></h1>
+      <h1 class="brand">《AI 讨论纪事报》<span class="brand-sub">· 档案库</span></h1>
       <div id="deepseek-status" class="deepseek-status unconfigured" title="点击配置 DeepSeek API Key" role="button" tabindex="0">
         <span class="status-dot"></span>
         <span class="status-text">DEEPSEEK: 未配置</span>
       </div>
     </div>
     <div class="topbar-actions">
-      <button id="open-recall-btn" class="crimson-btn" title="印制头版号外自测">📰 头版号外自测</button>
+      <button id="open-recall-btn" class="crimson-btn" title="印制头版号外">印制头版号外 ✦</button>
       <input id="search" type="search" placeholder="⌘K 检索纪事与随笔…" autocomplete="off" />
       <button id="settings-btn" class="ghost-btn" title="系统设置">设置</button>
     </div>
@@ -38,7 +38,7 @@
       <!-- DEEPSEEK 认知雷达 (RFC-004) -->
       <div class="radar-box">
         <div class="side-section radar-head">
-          <span>// DEEPSEEK 认知雷达</span>
+          <span>✦ DEEPSEEK 认知雷达</span>
           <button id="refresh-radar-btn" class="radar-refresh" title="重新提炼画像">↻</button>
         </div>
         <div id="cognitive-radar" class="cognitive-radar">
@@ -62,7 +62,13 @@
         </div>
         <div class="masthead-title-row">
           <h2 class="masthead-title">AI 讨论纪事报</h2>
-          <span class="masthead-stamp">存录典藏</span>
+          <span class="masthead-stamp" title="存录典藏">
+            <svg class="stamp-svg" viewBox="0 0 54 20" width="48" height="18" aria-label="存录典藏">
+              <rect x="0.75" y="0.75" width="52.5" height="18.5" fill="none" stroke="#a31d1d" stroke-width="1.2"/>
+              <rect x="2.2" y="2.2" width="49.6" height="15.6" fill="rgba(163,29,29,0.06)" stroke="#a31d1d" stroke-width="0.5"/>
+              <text x="27" y="13.5" font-family="'Noto Serif SC', 'Songti SC', 'STSong', serif" font-size="10.5" font-weight="900" fill="#a31d1d" text-anchor="middle" letter-spacing="1.5">存录典藏</text>
+            </svg>
+          </span>
         </div>
         <p class="masthead-motto">“记录人与大模型碰撞之洞见，于闲暇处重温以明心智”</p>
         <div class="oxford-rules"></div>
@@ -163,12 +169,18 @@
         <header class="recall-masthead">
           <div class="recall-meta">
             <span id="recall-masthead-date">甲辰年 · 讨论文汇</span>
-            <span class="recall-masthead-center">【头版号外自测】</span>
+            <span class="recall-masthead-center">【头版号外】</span>
             <span id="recall-issue-id">总第四十二期</span>
           </div>
           <div class="recall-title-wrap">
             <h2 class="recall-title">《AI 讨论纪事报》</h2>
-            <span class="recall-stamp">号外印章</span>
+            <span class="recall-stamp" title="头版号外">
+              <svg class="stamp-svg" viewBox="0 0 38 18" width="34" height="16" aria-label="号外">
+                <rect x="0.75" y="0.75" width="36.5" height="16.5" fill="none" stroke="#a31d1d" stroke-width="1.2"/>
+                <rect x="2.2" y="2.2" width="33.6" height="13.6" fill="rgba(163,29,29,0.06)" stroke="#a31d1d" stroke-width="0.5"/>
+                <text x="19" y="12" font-family="'Noto Serif SC', 'Songti SC', 'STSong', serif" font-size="10" font-weight="900" fill="#a31d1d" text-anchor="middle" letter-spacing="1.5">号外</text>
+              </svg>
+            </span>
           </div>
           <p class="recall-motto">“聚天下大模型之精义 · 备闲暇碎片时之自省”</p>
           <div class="oxford-rules"></div>
@@ -177,7 +189,7 @@
         <!-- 栏目一：【头版头条 · 深度推演】(Lead Story - q1) -->
         <article class="recall-section lead-story">
           <div class="recall-section-head">
-            <span class="recall-kicker">栏目一 · 头版头条</span>
+            <span class="recall-kicker">【头版头条】· 专稿</span>
             <span class="recall-source" id="recall-lead-source">ChatGPT · 昨天 16:10</span>
           </div>
           <h3 class="recall-headline" id="recall-q1-title">论持久化模型映射为何绝不可外泄至外部适配器？</h3>
@@ -190,7 +202,7 @@
           </div>
 
           <div id="recall-clue-box" class="recall-clue-box hidden">
-            <span class="clue-label">// 思考线索 (CLUE):</span>
+            <span class="clue-label">✦ 思考线索</span>
             <p id="recall-clue-text" class="clue-text">回想持久化层对外暴露接口时，外部变动对领域核心造成的连锁反应。</p>
           </div>
 
@@ -201,15 +213,15 @@
               <!-- 首字下沉原笔记正文动态挂载 -->
             </div>
             <div class="recall-anchor-card">
-              <span class="anchor-label">// DEEPSEEK 记忆锚点:</span>
+              <span class="anchor-label">✦ 核心提炼锚点</span>
               <p id="recall-anchor-text" class="anchor-text">核心业务规则如磐石，数据库与外设皆流沙。</p>
             </div>
             <!-- 随手批注栏 (Thought Box) -->
             <div class="recall-thought-box">
-              <span class="thought-label">随手记下新启示（批注回流）：</span>
+              <span class="thought-label">研读札记 · 随笔留痕</span>
               <div class="thought-input-row">
                 <input type="text" id="recall-thought-input" placeholder="输入反思与随感…" autocomplete="off" />
-                <button id="recall-thought-submit" class="crimson-btn">沉淀</button>
+                <button id="recall-thought-submit" class="crimson-btn">收录</button>
               </div>
               <span id="recall-thought-hint" class="recall-thought-hint"></span>
             </div>
@@ -221,7 +233,7 @@
         <!-- 栏目二：【报眼要闻 · 概念辨析】(Side Column - q2) -->
         <article class="recall-section side-story">
           <div class="recall-section-head">
-            <span class="recall-kicker">栏目二 · 报眼要闻</span>
+            <span class="recall-kicker">【报眼要闻】· 辨析</span>
           </div>
           <h4 class="recall-sub-headline" id="recall-q2-title">概念辨析：防腐层与普通 Data Mapper 有何本质区别？</h4>
           <button id="recall-q2-toggle" class="recall-reveal-btn">查看概念解析 ↓</button>
@@ -235,7 +247,7 @@
         <!-- 栏目三：【微言速测 · 一问快答】(Brief Dispatch - q3) -->
         <article class="recall-section brief-dispatch">
           <div class="recall-section-head">
-            <span class="recall-kicker">栏目三 · 微言速测</span>
+            <span class="recall-kicker">【微言速测】· 快问</span>
           </div>
           <h4 class="recall-sub-headline" id="recall-q3-title">数据库字段更名，领域逻辑代码是否应该修改？</h4>
           <button id="recall-q3-toggle" class="recall-reveal-btn">揭晓快测答案 ↓</button>
@@ -247,7 +259,7 @@
         <!-- 通栏底栏换版操作 (RFC-004) -->
         <footer class="recall-footer">
           <div class="oxford-rules"></div>
-          <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一版号外自测 (换一批) ✦</button>
+          <button id="recall-shuffle-btn" class="recall-shuffle-btn">印制下一期号外 ✦</button>
           <button id="recall-close-btn" class="ghost-btn recall-close-btn">收拢号外返回档案</button>
         </footer>
       </div>
