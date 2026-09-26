@@ -648,6 +648,10 @@
       const downloadApkLink = document.getElementById("download-apk-link");
 
       function parseSemver(v) {
+        const match = String(v || "").match(/(\d+)\.(\d+)\.(\d+)/);
+        if (match) {
+          return [Number(match[1]), Number(match[2]), Number(match[3])];
+        }
         return (v || "").replace(/^v/, "").split(".").map(Number);
       }
 
@@ -669,9 +673,10 @@
       async function checkForUpdates(manual = false) {
         if (manual && updateStatusMsg) updateStatusMsg.textContent = "正在云端检查更新…";
         try {
-          let resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/tags/latest-mobile").catch(() => null);
+          // 优先查 /releases/latest 官方正式发版，若无再兜底 /releases/tags/latest-mobile
+          let resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/latest").catch(() => null);
           if (!resp || !resp.ok) {
-            resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/latest").catch(() => null);
+            resp = await fetch("https://api.github.com/repos/PcOffeeP/ai-discussion-notes/releases/tags/latest-mobile").catch(() => null);
           }
           if (!resp || !resp.ok) {
             if (manual && updateStatusMsg) updateStatusMsg.textContent = "暂未检测到云端发布";
@@ -683,19 +688,46 @@
           const apkAsset = assets.find((a) => a.name && a.name.endsWith(".apk")) || assets[0];
           const downloadUrl = apkAsset?.browser_download_url || data.html_url;
 
-          // 尝试读取配套的 version.json 资产以获得精确 versionCode
           let remoteVersionCode = 0;
-          let remoteVersionName = latestTag.replace(/^v/, "");
-          const versionJsonAsset = assets.find((a) => a.name === "version.json");
-          if (versionJsonAsset && versionJsonAsset.browser_download_url) {
+          let remoteVersionName = "";
+
+          // 1. 尝试从 release body 的结构化注释中提取版本元数据 (无需次生请求且免疫 CORS)
+          if (data.body) {
+            const jsonMatch = data.body.match(/<!--\s*build-info:\s*({.*?})\s*-->/);
+            if (jsonMatch) {
+              try {
+                const parsed = JSON.parse(jsonMatch[1]);
+                if (parsed.version) remoteVersionName = parsed.version;
+                if (parsed.versionCode) remoteVersionCode = parsed.versionCode;
+              } catch (_) {}
+            }
+          }
+
+          // 2. 尝试从 release name 或 tag 中提取版本号 (如 v0.4.2 或 Build 402)
+          if (!remoteVersionName) {
+            const vMatch = (data.name || latestTag).match(/v?(\d+\.\d+\.\d+)/);
+            if (vMatch) remoteVersionName = vMatch[1];
+          }
+          if (!remoteVersionCode && data.name) {
+            const codeMatch = data.name.match(/Build\s*(\d+)/i);
+            if (codeMatch) remoteVersionCode = Number(codeMatch[1]);
+          }
+
+          // 3. CORS 友好通道兜底：尝试拉取 raw.githubusercontent.com 上的 version.json
+          if (!remoteVersionName || !remoteVersionCode) {
             try {
-              const vResp = await fetch(versionJsonAsset.browser_download_url);
-              if (vResp.ok) {
-                const vData = await vResp.json();
-                remoteVersionCode = vData.versionCode || 0;
-                if (vData.version) remoteVersionName = vData.version;
+              const rawResp = await fetch("https://raw.githubusercontent.com/PcOffeeP/ai-discussion-notes/main/version.json").catch(() => null);
+              if (rawResp && rawResp.ok) {
+                const rawData = await rawResp.json();
+                if (rawData.version && !remoteVersionName) remoteVersionName = rawData.version;
+                if (rawData.versionCode && !remoteVersionCode) remoteVersionCode = rawData.versionCode;
               }
             } catch (_) {}
+          }
+
+          // 4. 若上述均未匹配，兜底使用 tag_name 纯数字部分
+          if (!remoteVersionName) {
+            remoteVersionName = latestTag.replace(/^v/, "");
           }
 
           const hasNewer = isRemoteNewer(remoteVersionName, remoteVersionCode, buildInfo.version, buildInfo.versionCode);
@@ -704,7 +736,8 @@
             if (updateStatusMsg) updateStatusMsg.textContent = `发现新版本：${displayTag}`;
             if (updateNotesText) {
               const pubTime = data.published_at ? new Date(data.published_at).toLocaleDateString() : "";
-              updateNotesText.textContent = `发现新版：${displayTag} (发布时间: ${pubTime})\n当前运行：v${buildInfo.version} (Build ${buildInfo.versionCode})\n${(data.body || "常规性能调优与功能更新").slice(0, 150)}`;
+              const cleanBody = (data.body || "常规性能调优与功能更新").replace(/<!--.*?-->/g, "").trim();
+              updateNotesText.textContent = `发现新版：${displayTag} (发布时间: ${pubTime})\n当前运行：v${buildInfo.version} (Build ${buildInfo.versionCode})\n${cleanBody.slice(0, 150)}`;
             }
             if (downloadApkLink) {
               downloadApkLink.href = downloadUrl;

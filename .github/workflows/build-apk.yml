@@ -49,15 +49,27 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      - name: Read Version Info
+        id: version_info
+        run: |
+          VERSION=$(node -p "require('./version.json').version")
+          VERSION_CODE=$(node -p "require('./version.json').versionCode")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
+
       - name: Publish or Update GitHub Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: latest-mobile
-          name: "最新移动端测试版 (Latest Mobile Build)"
-          body: "GitHub Actions 自动构建的最新安卓 APP 安装包。App 内点击「检查更新」即可一键识别版本并完成升级。"
+          tag_name: v${{ steps.version_info.outputs.version }}
+          name: "v${{ steps.version_info.outputs.version }} (Build ${{ steps.version_info.outputs.versionCode }})"
+          body: |
+            <!-- build-info: {"version":"${{ steps.version_info.outputs.version }}","versionCode":${{ steps.version_info.outputs.versionCode }}} -->
+            GitHub Actions 自动构建的最新安卓 APP 安装包。App 内点击「检查更新」即可一键识别版本并完成升级。
           files: |
             android/app/build/outputs/apk/debug/app-debug.apk
             version.json
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

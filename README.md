@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/PcOffeeP/ai-discussion-notes/releases/tag/latest-mobile">
+  <a href="https://github.com/PcOffeeP/ai-discussion-notes/releases/latest">
     <img src="https://img.shields.io/badge/Release-v0.4.2-blue.svg" alt="Latest Release" />
   </a>
   <a href="https://github.com/PcOffeeP/ai-discussion-notes/actions">
@@ -101,7 +101,7 @@ DeepSeek 认知编排 (RFC-003) ←───────────────
 5. 在 ChatGPT、Kimi 或 DeepSeek 对话中划词，即可看到剪藏浮钮。
 
 ### 2. 移动端 Android APP 安装
-- **方式一（推荐）**：直接在手机浏览器访问 [GitHub Releases (latest-mobile)](https://github.com/PcOffeeP/ai-discussion-notes/releases/tag/latest-mobile)，下载 `app-debug.apk` 安装。安装后后续均可在 APP 内点击「检查更新」一键在线升级。
+- **方式一（推荐）**：直接在手机浏览器访问 [GitHub Releases 最新安装包](https://github.com/PcOffeeP/ai-discussion-notes/releases/latest)，下载 `app-debug.apk` 安装。安装后后续均可在 APP 内点击「检查更新」一键在线升级。
 - **方式二（本地编译）**：
   ```bash
   npm install
@@ -133,7 +133,7 @@ npm test
 
 本项目遵循标准规范的 **“特性分支迭代，主分支发布”** 工作流，详细说明请参阅 [**`AGENTS.md`**](file:///Users/pcoffeep/AgentPlayground/active-projects/ai-discussion-notes/AGENTS.md)。
 - 新功能开发在 `feature/*` 分支独立完成；
-- 合并至 `main` 分支并推送后，GitHub Actions 自动触发编译生成最新 Android 安装包，并更新 `latest-mobile` 发行版；
+- 合并至 `main` 分支并推送后，GitHub Actions 自动触发编译生成最新 Android 安装包，并发布至 GitHub Releases；
 - Render 云同步网关同步热重载。
 
 ---
