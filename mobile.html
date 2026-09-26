@@ -685,7 +685,9 @@
           const data = await resp.json();
           const latestTag = data.tag_name || "";
           const assets = data.assets || [];
-          const apkAsset = assets.find((a) => a.name && a.name.endsWith(".apk")) || assets[0];
+          const apkAsset = assets.find((a) => a.name && a.name.includes("AI-Discussion-Notes") && a.name.endsWith(".apk"))
+            || assets.find((a) => a.name && a.name.endsWith(".apk"))
+            || assets[0];
           const downloadUrl = apkAsset?.browser_download_url || data.html_url;
 
           let remoteVersionCode = 0;
@@ -742,6 +744,12 @@
             if (downloadApkLink) {
               downloadApkLink.href = downloadUrl;
               downloadApkLink.textContent = `立即在手机上下载并升级至 ${displayTag} ↓`;
+              if (apkAsset && apkAsset.name) {
+                downloadApkLink.setAttribute("download", apkAsset.name);
+              }
+              downloadApkLink.onclick = () => {
+                if (updateStatusMsg) updateStatusMsg.textContent = "已拉起下载，安装后重新打开即可生效 ✓";
+              };
             }
             if (updateActionBox) updateActionBox.classList.remove("hidden");
           } else {

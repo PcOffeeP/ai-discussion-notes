@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AI-Discussion-Notes-Debug-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
       - name: Read Version Info
@@ -67,7 +67,7 @@ jobs:
             <!-- build-info: {"version":"${{ steps.version_info.outputs.version }}","versionCode":${{ steps.version_info.outputs.versionCode }}} -->
             GitHub Actions 自动构建的最新安卓 APP 安装包。App 内点击「检查更新」即可一键识别版本并完成升级。
           files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/*.apk
             version.json
           make_latest: true
         env:
