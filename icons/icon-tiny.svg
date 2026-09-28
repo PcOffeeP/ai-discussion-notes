@@ -1,1 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><style>@media (prefers-color-scheme: dark){.plate{fill:#151924}.bubble{fill:#202739;stroke:#F0EAE1}.faint{fill:#F0EAE1;stroke:#F0EAE1}.accent{fill:#5B87FF}.onaccent{fill:#10141F}.pt-fill{fill:#F0EAE1}.pt-stroke{stroke:#F0EAE1}}</style><rect class="plate" width="512" height="512" rx="114" fill="#F4EFE4"/><path class="bubble" d="M128 76H384A68 68 0 0 1 452 144V288A68 68 0 0 1 384 356H216L152 428L144 356H128A68 68 0 0 1 60 288V144A68 68 0 0 1 128 76Z" fill="#FBF8F0" stroke="#1F2437" stroke-width="52" stroke-linejoin="round"/><rect class="accent" x="126" y="161" width="260" height="110" rx="24" fill="#3B6FF5"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <style>
+    .plate { fill: #F8F6F0; }
+    .ink { fill: #1A1918; }
+    .crimson { fill: #A31D1D; }
+    .on-crimson { fill: #F8F6F0; }
+
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #16181D; }
+      .ink { fill: #ECE8DF; }
+      .crimson { fill: #D43838; }
+      .on-crimson { fill: #16181D; }
+    }
+  </style>
+
+  <!-- 1. 新闻纸底板 -->
+  <rect class="plate" width="512" height="512" rx="108"/>
+
+  <!-- 2. 牛津双线 (16px 极限强化) -->
+  <rect class="ink" x="52" y="60" width="232" height="38" rx="6"/>
+  <rect class="ink" x="52" y="114" width="232" height="18" rx="4"/>
+
+  <!-- 3. 右上角：朱砂印泥大方印 (确保在 16px 下红点极具辨识度) -->
+  <g transform="translate(312, 52)">
+    <rect class="crimson" width="148" height="148" rx="28"/>
+    <path class="on-crimson" d="M74 24 C74 50 56 74 28 74 C56 74 74 98 74 124 C74 98 92 74 120 74 C92 74 74 50 74 24 Z"/>
+  </g>
+
+  <!-- 4. 双栏主要几何块 (大块面，无碎线) -->
+  <!-- 左栏 -->
+  <rect class="ink" x="52" y="172" width="180" height="52" rx="8"/>
+  <rect class="crimson" x="52" y="254" width="16" height="188" rx="4"/>
+  <rect class="ink" x="84" y="254" width="148" height="42" rx="6"/>
+  <rect class="ink" x="84" y="324" width="148" height="42" rx="6"/>
+  <rect class="ink" x="84" y="394" width="112" height="42" rx="6"/>
+
+  <!-- 右栏 -->
+  <rect class="ink" x="272" y="254" width="188" height="42" rx="6"/>
+  <rect class="ink" x="272" y="324" width="188" height="42" rx="6"/>
+  <rect class="ink" x="272" y="394" width="138" height="42" rx="6"/>
+</svg>

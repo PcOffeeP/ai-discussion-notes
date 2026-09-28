@@ -5,6 +5,7 @@
   "description": "Save the best things you learn from AI. (Chrome MV3 extension)",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
+    "build:icons": "node scripts/generate-icons.js",
     "serve": "python3 -m http.server 8080",
     "build:mobile": "node scripts/build-mobile-dist.js && npx cap sync android",
     "start:sync": "node server/sync-server.js"

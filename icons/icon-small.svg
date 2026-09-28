@@ -1,1 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><style>@media (prefers-color-scheme: dark){.plate{fill:#151924}.bubble{fill:#202739;stroke:#F0EAE1}.faint{fill:#F0EAE1;stroke:#F0EAE1}.accent{fill:#5B87FF}.onaccent{fill:#10141F}.pt-fill{fill:#F0EAE1}.pt-stroke{stroke:#F0EAE1}}</style><rect class="plate" width="512" height="512" rx="114" fill="#F4EFE4"/><path class="bubble" d="M128 76H384A68 68 0 0 1 452 144V288A68 68 0 0 1 384 356H216L152 428L144 356H128A68 68 0 0 1 60 288V144A68 68 0 0 1 128 76Z" fill="#FBF8F0" stroke="#1F2437" stroke-width="38" stroke-linejoin="round"/><rect class="accent" x="124" y="134" width="252" height="88" rx="20" fill="#3B6FF5"/><g transform="translate(330 226) scale(2.7)"><path class="faint" d="M0 0L0 26L6.5 20L12 31L18 28L12.5 17.5L21 17.5Z" fill="#1F2437"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <style>
+    .plate { fill: #F8F6F0; }
+    .ink { fill: #1A1918; }
+    .ink-sub { fill: #1A1918; fill-opacity: 0.38; }
+    .ink-head { fill: #1A1918; fill-opacity: 0.88; }
+    .rule { stroke: #1A1918; stroke-opacity: 0.20; }
+    .crimson { fill: #A31D1D; }
+    .on-crimson { fill: #F8F6F0; }
+
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #16181D; }
+      .ink { fill: #ECE8DF; }
+      .ink-sub { fill: #ECE8DF; fill-opacity: 0.38; }
+      .ink-head { fill: #ECE8DF; fill-opacity: 0.88; }
+      .rule { stroke: #ECE8DF; stroke-opacity: 0.22; }
+      .crimson { fill: #C52828; }
+      .on-crimson { fill: #16181D; }
+    }
+  </style>
+
+  <!-- 1. 新闻纸底板 -->
+  <rect class="plate" width="512" height="512" rx="112"/>
+
+  <!-- 2. 牛津双线 (更粗更稳) -->
+  <rect class="ink" x="64" y="74" width="240" height="22" rx="4"/>
+  <rect class="ink" x="64" y="108" width="240" height="10" rx="2"/>
+
+  <!-- 3. 右上角：朱砂印泥方印 (略微放大以保证 32px 识别力) -->
+  <g transform="translate(332, 64)">
+    <rect class="crimson" width="116" height="116" rx="22"/>
+    <path class="on-crimson" d="M58 20 C58 40 44 58 22 58 C44 58 58 76 58 96 C58 76 72 58 94 58 C72 58 58 40 58 20 Z"/>
+  </g>
+
+  <!-- 4. 双栏分隔竖线 -->
+  <line class="rule" x1="256" y1="152" x2="256" y2="432" stroke-width="4"/>
+
+  <!-- 5. 左栏 (块面化报道) -->
+  <rect class="ink-head" x="64" y="156" width="172" height="36" rx="4"/>
+  
+  <!-- 朱砂立柱与要闻 -->
+  <rect class="crimson" x="64" y="212" width="10" height="96" rx="3"/>
+  <rect class="ink-head" x="86" y="216" width="150" height="18" rx="3"/>
+  <rect class="ink-head" x="86" y="248" width="150" height="18" rx="3"/>
+  <rect class="ink-head" x="86" y="280" width="118" height="18" rx="3"/>
+
+  <!-- 下部报道块 -->
+  <rect class="ink-sub" x="64" y="332" width="172" height="18" rx="3"/>
+  <rect class="ink-sub" x="64" y="364" width="172" height="18" rx="3"/>
+  <rect class="ink-sub" x="64" y="396" width="124" height="18" rx="3"/>
+
+  <!-- 6. 右栏 -->
+  <rect class="ink-head" x="276" y="156" width="172" height="28" rx="4"/>
+  <rect class="ink-sub" x="276" y="200" width="172" height="18" rx="3"/>
+  <rect class="ink-sub" x="276" y="232" width="144" height="18" rx="3"/>
+
+  <rect class="crimson" x="276" y="274" width="172" height="32" rx="4" fill-opacity="0.12"/>
+  <rect class="crimson" x="290" y="282" width="108" height="16" rx="3"/>
+
+  <rect class="ink-sub" x="276" y="332" width="172" height="18" rx="3"/>
+  <rect class="ink-sub" x="276" y="364" width="172" height="18" rx="3"/>
+  <rect class="ink-sub" x="276" y="396" width="118" height="18" rx="3"/>
+</svg>
