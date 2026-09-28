@@ -125,12 +125,18 @@ function buildHarnessHtml() {
 function delay(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function boot() {
-  fs.writeFileSync(HARNESS_PATH, buildHarnessHtml());
-  const dom = await JSDOM.fromFile(HARNESS_PATH, {
+  const dom = new JSDOM(buildHarnessHtml(), {
+    url: HARNESS_URL,
     runScripts: "dangerously",
     resources: "usable",
     pretendToBeVisual: true,
     beforeParse(window) {
+      window.__documentClickListeners = 0;
+      const add = window.Document.prototype.addEventListener;
+      window.Document.prototype.addEventListener = function(type, ...args) {
+        if (type === "click") window.__documentClickListeners++;
+        return add.call(this, type, ...args);
+      };
       // jsdom 对 file:// 禁用 localStorage；scrollHeight 恒为 0 会跳过长笔记折叠
       const mem = new Map();
       Object.defineProperty(window, "localStorage", {
@@ -160,7 +166,18 @@ test("notes 页面 UI 冒烟", async (t) => {
   const dom = await boot();
   const { window } = dom;
   const { document } = window;
-  t.after(() => { window.close(); fs.rmSync(HARNESS_PATH, { force: true }); });
+  t.after(() => { window.close(); });
+
+  await t.test("反复刷新不增加文档点击监听器", async () => {
+    const before = window.__documentClickListeners;
+    const input = document.getElementById("search");
+    for (const value of ["xxx", "", "note", ""]) {
+      input.value = value;
+      input.dispatchEvent(new window.Event("input"));
+      await delay(200);
+    }
+    assert.equal(window.__documentClickListeners, before);
+  });
 
   const convItems = () => document.querySelectorAll("#side-conversations .side-item");
 

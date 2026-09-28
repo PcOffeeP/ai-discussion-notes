@@ -91,6 +91,7 @@ function createSyncServer(options = {}) {
             (settings.updatedAt && !Number.isFinite(Date.parse(settings.updatedAt)))))) {
         return reply(res, 400, { error: "Invalid sync payload" });
       }
+      if (body.storageId && body.storageId !== state.storageId) return reply(res, 409, { error: "Storage recreated; full sync required" });
       const serverTime = time();
       const map = new Map(state.notes.map(n => [n.id, n]));
       for (const note of body.deltas || []) {

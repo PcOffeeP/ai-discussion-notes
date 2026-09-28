@@ -1,6 +1,7 @@
 // background/service-worker.js — 装配层：组合端口与适配器，不含业务规则。
 importScripts(
   "../core/note.js",
+  "../core/settings.js",
   "../core/html-to-markdown.js",
   "../core/pipeline.js",
   "../core/recall/prompt-builder.js",

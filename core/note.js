@@ -52,6 +52,8 @@
       thoughts: Array.isArray(dto.thoughts) ? dto.thoughts : [],
       createdAt: dto.createdAt || new Date().toISOString(),
     };
+    if (dto.updatedAt) note.updatedAt = dto.updatedAt;
+    if (dto.deletedAt) note.deletedAt = dto.deletedAt;
     return note;
   }
 
@@ -84,7 +86,9 @@
       conversationTitle: raw.conversationTitle,
       conversationUrl: raw.conversationUrl,
       metadata: Object.assign({ dirty: false }, raw.metadata || {}),
-      thoughts: [],
+      thoughts: raw.thoughts || [],
+      updatedAt: raw.updatedAt,
+      deletedAt: raw.deletedAt,
       createdAt: raw.createdAt,
     });
   }

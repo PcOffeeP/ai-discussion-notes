@@ -19,10 +19,18 @@
       const data = await kv.get(SETTINGS_KEY);
       return Object.assign({}, DEFAULT_SETTINGS, data[SETTINGS_KEY] || {});
     }
-    async function patchSettings(patch) {
-      const merged = Object.assign(await getSettings(), patch || {});
-      await kv.set({ [SETTINGS_KEY]: merged });
-      return merged;
+    let settingsQueue = Promise.resolve();
+    function changeSettings(work) {
+      const next = settingsQueue.then(async () => {
+        const merged = work(await getSettings());
+        await kv.set({ [SETTINGS_KEY]: merged });
+        return merged;
+      });
+      settingsQueue = next.catch(() => {});
+      return next;
+    }
+    function patchSettings(patch) {
+      return changeSettings(current => ({ ...current, ...patch, ...AIDN.settings.change(current, patch || {}) }));
     }
 
     // 写操作成功后向所有扩展页面广播变更（kind = save|update|delete|clear），
@@ -89,15 +97,7 @@
       },
       "sync.now": async (params) => {
         const settings = await getSettings();
-        const syncSettings = Object.assign(
-          {
-            deepseekApiKey: settings.deepseekApiKey || "",
-            deepseekBaseUrl: settings.deepseekBaseUrl || "https://api.deepseek.com/v1",
-            deepseekModel: settings.deepseekModel || "deepseek-chat",
-            updatedAt: settings.updatedAt || "",
-          },
-          params?.settings || {}
-        );
+        const syncSettings = AIDN.settings.normalize(settings);
 
         if (typeof repo.sync === "function") {
           const syncResult = await repo.sync({
@@ -107,28 +107,10 @@
             forceFull: params?.forceFull,
           });
 
-          // 如果远端返回了 settings，且远端配置比本地更新或本地缺少 key，落回本地设置
-          if (syncResult && syncResult.settings) {
-            const remote = syncResult.settings;
-            const toPatch = {};
-            if (remote.deepseekApiKey && !settings.deepseekApiKey) {
-              toPatch.deepseekApiKey = remote.deepseekApiKey;
-            }
-            if (remote.deepseekBaseUrl && !settings.deepseekApiKey && remote.deepseekBaseUrl !== settings.deepseekBaseUrl) {
-              toPatch.deepseekBaseUrl = remote.deepseekBaseUrl;
-            }
-            if (remote.deepseekModel && !settings.deepseekApiKey && remote.deepseekModel !== settings.deepseekModel) {
-              toPatch.deepseekModel = remote.deepseekModel;
-            }
-            if (remote.updatedAt && settings.updatedAt && remote.updatedAt > settings.updatedAt) {
-              if (remote.deepseekApiKey) toPatch.deepseekApiKey = remote.deepseekApiKey;
-              if (remote.deepseekBaseUrl) toPatch.deepseekBaseUrl = remote.deepseekBaseUrl;
-              if (remote.deepseekModel) toPatch.deepseekModel = remote.deepseekModel;
-            }
-            if (Object.keys(toPatch).length > 0) {
-              await patchSettings(toPatch);
-            }
+          if (syncResult?.settings) {
+            await changeSettings(current => ({ ...current, ...AIDN.settings.mergeRemote(current, syncResult.settings) }));
           }
+          if (syncResult?.serverUpdatesCount) notifyChanged("sync");
 
           return syncResult;
         }

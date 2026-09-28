@@ -18,29 +18,25 @@
     const series = opts.seriesName || targetNote.conversationTitle || "AI 讨论文汇";
     const source = opts.source || targetNote.source || "AI 对话";
 
-    const snippet = (targetNote.contentMarkdown || targetNote.contentText || "核心知识沉淀")
-      .replace(/\n+/g, " ")
-      .trim();
-    const firstSentence = snippet.split(/[。！？\n]/)[0] || snippet.slice(0, 40);
-
+    const snippet = AIDN.note.markdownToText(targetNote.contentMarkdown || targetNote.contentText || "");
+    const parts = snippet.split(/[。！？!?\n]+/).map(v => v.trim()).filter(Boolean);
+    const first = parts[0] || "这篇笔记暂无正文，请先补充内容";
+    const detail = parts[1] || first;
+    const thoughts = (targetNote.thoughts || []).map(t => t.text).filter(Boolean);
+    const thought = thoughts[thoughts.length - 1];
     return {
-      issueId: `issue_${Date.now().toString(36)}`,
-      seriesName: series,
-      leadSource: `${source} · 深度沉淀`,
+      issueId: `issue_${Date.now().toString(36)}`, seriesName: series,
+      generationMode: "offline", leadSource: `${source} · 离线复习提示`,
       q1: {
-        title: `论「${series}」中核心机制的设计权衡与本质推演`,
-        sub: `基于 ${source} 讨论脉络的启发式自测`,
-        clue: `回溯上下文中的因果推演：关键不变式与外部依赖是如何解耦的？`,
-        anchor: firstSentence.length > 5 ? firstSentence : "核心业务规则如磐石，数据库与外设皆流沙",
-        targetNoteId: targetId,
+        title: `回忆「${series}」：原文首先表达了什么？`,
+        sub: "基于当前原文与批注的确定性提示，未经模型推理",
+        clue: `从原文开头回想：${first.slice(0, 24)}…`,
+        anchor: first, targetNoteId: targetId,
       },
-      q2: {
-        title: `概念辨析：核心业务模型与外部传输模型（DTO/Mapper）的本质边界为何？`,
-        body: `外部传输结构随接口契约与存储形式演化，而领域核心模型只反映真实业务规则，二者必须通过防腐/映射层严格隔离。`,
-      },
+      q2: { title: "不看原文，复述这段笔记中的一项细节", body: `原文对照：${detail}` },
       q3: {
-        title: `微言速测：当底层存储字段更名时，核心领域层代码是否应该做同步修改？`,
-        body: `绝不应该。应由持久化适配器（Repository Adapter）负责双向转换与映射，隔离外部变动。`,
+        title: thought ? "你最近为这篇笔记留下了什么批注？" : "用自己的话总结这篇笔记，并添加一条批注",
+        body: thought ? `批注对照：${thought}` : `原文对照：${first}（这是回忆提示，没有标准推理答案）`,
       },
     };
   }
@@ -58,9 +54,10 @@
 
     return {
       updatedAt: new Date().toISOString(),
-      activeTopics: titles.length > 0 ? titles : ["现代软件工程", "大模型交互洞见"],
-      recentShift: "从碎片化问题探索逐步沉淀为系统化认知结构",
-      dormantTopics: ["通用检索", "语法速查"],
+      activeTopics: titles,
+      recentShift: "离线摘要：仅列出近期笔记标题，未分析认知变化",
+      generationMode: "offline",
+      dormantTopics: [],
     };
   }
 
@@ -71,7 +68,17 @@
     const defaultBaseUrl = config.baseUrl || DEFAULT_BASE_URL;
     const defaultModel = config.model || DEFAULT_MODEL;
     const defaultApiKey = config.apiKey || "";
-    const fetchFn = config.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(global) : null);
+    const rawFetch = config.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(global) : null);
+    const fetchFn = rawFetch && (async (url, options) => {
+      const controller = new AbortController();
+      let timer;
+      try {
+        return await Promise.race([
+          rawFetch(url, { ...options, signal: controller.signal }),
+          new Promise((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("请求超时")); }, config.timeoutMs || 20000); }),
+        ]);
+      } finally { clearTimeout(timer); }
+    });
 
     /**
      * 生成头版号外自测
@@ -115,7 +122,7 @@
 
       if (!resp.ok) {
         const errText = await resp.text().catch(() => "");
-        throw new Error(`DeepSeek API 请求失败 [HTTP ${resp.status}]: ${errText.slice(0, 200)}`);
+        throw new Error(`DeepSeek API 请求失败 [HTTP ${resp.status}]`);
       }
 
       const result = await resp.json();
@@ -215,15 +222,21 @@
 
       if (!resp.ok) {
         const errText = await resp.text().catch(() => "");
-        throw new Error(`连接失败 [HTTP ${resp.status}]: ${errText.slice(0, 150)}`);
+        throw new Error(`连接失败 [HTTP ${resp.status}]`);
       }
 
       return { ok: true };
     }
 
     return {
-      generateRecallIssue,
-      generateCognitiveProfile,
+      async generateRecallIssue(params = {}) {
+        try { return await generateRecallIssue(params); }
+        catch (_) { return { ...buildHeuristicFallbackIssue(params), fallbackReason: "模型请求失败，已切换离线提示" }; }
+      },
+      async generateCognitiveProfile(params = {}) {
+        try { return await generateCognitiveProfile(params); }
+        catch (_) { return buildHeuristicFallbackProfile(params.recentNotes); }
+      },
       testConnection,
       buildHeuristicFallbackIssue,
       buildHeuristicFallbackProfile,
