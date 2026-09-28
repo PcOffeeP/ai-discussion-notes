@@ -16,26 +16,28 @@
   <!-- 1. 新闻纸底板 -->
   <rect class="plate" width="512" height="512" rx="108"/>
 
-  <!-- 2. 牛津双线 (16px 极限强化) -->
-  <rect class="ink" x="52" y="60" width="232" height="38" rx="6"/>
-  <rect class="ink" x="52" y="114" width="232" height="18" rx="4"/>
+  <!-- ==================== 顶部牛津线与朱砂印水平齐平 ==================== -->
+  <rect class="ink" x="52" y="60" width="224" height="42" rx="6"/>
+  <rect class="ink" x="52" y="118" width="224" height="20" rx="4"/>
 
-  <!-- 3. 右上角：朱砂印泥大方印 (确保在 16px 下红点极具辨识度) -->
-  <g transform="translate(312, 52)">
-    <rect class="crimson" width="148" height="148" rx="28"/>
-    <path class="on-crimson" d="M74 24 C74 50 56 74 28 74 C56 74 74 98 74 124 C74 98 92 74 120 74 C92 74 74 50 74 24 Z"/>
+  <!-- 右上角朱砂印泥大方印 (与右侧边距 52px 绝对对称，X: 320~460, Y: 56~196) -->
+  <g transform="translate(320, 56)">
+    <rect class="crimson" width="140" height="140" rx="26"/>
+    <path class="on-crimson" d="M70 24 C70 48 54 70 28 70 C54 70 70 92 70 116 C70 92 86 70 112 70 C86 70 70 48 70 24 Z"/>
   </g>
 
-  <!-- 4. 双栏主要几何块 (大块面，无碎线) -->
-  <!-- 左栏 -->
-  <rect class="ink" x="52" y="172" width="180" height="52" rx="8"/>
-  <rect class="crimson" x="52" y="254" width="16" height="188" rx="4"/>
-  <rect class="ink" x="84" y="254" width="148" height="42" rx="6"/>
-  <rect class="ink" x="84" y="324" width="148" height="42" rx="6"/>
-  <rect class="ink" x="84" y="394" width="112" height="42" rx="6"/>
+  <!-- ==================== 正文双栏块面 (基线水平对称锁死) ==================== -->
+  <!-- 行 1: Y=236, H=48 -->
+  <rect class="ink" x="52" y="236" width="180" height="48" rx="8"/>
+  <rect class="ink" x="280" y="236" width="180" height="48" rx="8"/>
 
-  <!-- 右栏 -->
-  <rect class="ink" x="272" y="254" width="188" height="42" rx="6"/>
-  <rect class="ink" x="272" y="324" width="188" height="42" rx="6"/>
-  <rect class="ink" x="272" y="394" width="138" height="42" rx="6"/>
+  <!-- 行 2: Y=310, H=48 -->
+  <!-- 左栏带一抹朱砂立柱 -->
+  <rect class="crimson" x="52" y="310" width="18" height="122" rx="4"/>
+  <rect class="ink" x="84" y="310" width="148" height="48" rx="8"/>
+  <rect class="ink" x="280" y="310" width="180" height="48" rx="8"/>
+
+  <!-- 行 3: Y=384, H=48 (底部对齐) -->
+  <rect class="ink" x="84" y="384" width="118" height="48" rx="8"/>
+  <rect class="ink" x="280" y="384" width="140" height="48" rx="8"/>
 </svg>

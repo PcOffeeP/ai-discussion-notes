@@ -4,7 +4,7 @@
     .ink { fill: #1A1918; }
     .ink-sub { fill: #1A1918; fill-opacity: 0.38; }
     .ink-head { fill: #1A1918; fill-opacity: 0.88; }
-    .rule { stroke: #1A1918; stroke-opacity: 0.16; }
+    .rule-faint { stroke: #1A1918; stroke-opacity: 0.16; }
     .card-border { stroke: #1A1918; stroke-opacity: 0.28; }
     .card-bg { fill: #1A1918; fill-opacity: 0.035; }
     .crimson { fill: #A31D1D; }
@@ -15,7 +15,7 @@
       .ink { fill: #ECE8DF; }
       .ink-sub { fill: #ECE8DF; fill-opacity: 0.38; }
       .ink-head { fill: #ECE8DF; fill-opacity: 0.88; }
-      .rule { stroke: #ECE8DF; stroke-opacity: 0.18; }
+      .rule-faint { stroke: #ECE8DF; stroke-opacity: 0.18; }
       .card-border { stroke: #ECE8DF; stroke-opacity: 0.32; }
       .card-bg { fill: #ECE8DF; fill-opacity: 0.05; }
       .crimson { fill: #C52828; }
@@ -23,65 +23,59 @@
     }
   </style>
 
-  <!-- 1. 新闻纸底板 (连续圆角 22%) -->
-  <rect class="plate" width="512" height="512" rx="112"/>
+  <!-- 1. 新闻纸底板 -->
+  <rect class="plate" width="512" height="512" rx="108"/>
 
-  <!-- 2. 牛津双线 (Oxford Double Rule) - 百年大报标志报头 -->
-  <!-- 顶端粗主线 -->
-  <rect class="ink" x="68" y="80" width="248" height="14" rx="2"/>
-  <!-- 下方细副线 -->
-  <rect class="ink" x="68" y="104" width="248" height="5" rx="1"/>
+  <!-- 2. 顶部报头: 牛津双线与朱砂印齐平 -->
+  <rect class="ink" x="64" y="74" width="284" height="16" rx="3"/>
+  <rect class="ink" x="64" y="98" width="284" height="5" rx="1"/>
+  <rect class="ink-sub" x="64" y="122" width="168" height="10" rx="2"/>
 
-  <!-- 3. 右上角：朱砂印泥方印 (The Vermilion Seal - 灵魂点睛) -->
-  <g transform="translate(348, 72)">
-    <!-- 印章本体 -->
-    <rect class="crimson" width="96" height="96" rx="18"/>
-    <!-- 阴刻思维火花 (✦ Spark of Insight) -->
-    <path class="on-crimson" d="M48 18 C48 34 38 48 20 48 C38 48 48 62 48 78 C48 62 58 48 76 48 C58 48 48 34 48 18 Z"/>
+  <!-- 右上角朱砂印泥方印 -->
+  <g transform="translate(368, 64)">
+    <rect class="crimson" width="80" height="80" rx="16"/>
+    <path class="on-crimson" d="M40 14 C40 28 31 40 16 40 C31 40 40 52 40 66 C40 52 49 40 64 40 C49 40 40 28 40 14 Z"/>
   </g>
 
-  <!-- 4. 报头小标 (Masthead Slug) -->
-  <rect class="ink-sub" x="68" y="126" width="144" height="10" rx="2"/>
+  <!-- 报头与正文水平分隔线 -->
+  <line class="rule-faint" x1="64" y1="156" x2="448" y2="156" stroke-width="1.5"/>
 
-  <!-- 5. 双栏分界立柱竖线 (Column Rule) -->
-  <line class="rule" x1="256" y1="154" x2="256" y2="432" stroke-width="2.5"/>
+  <!-- 中央垂直分栏线 -->
+  <line class="rule-faint" x1="256" y1="172" x2="256" y2="430" stroke-width="2"/>
 
-  <!-- 6. 左栏：【头版头条 · 专稿推演】 -->
-  <!-- 头条大黑块标题 -->
-  <rect class="ink-head" x="68" y="156" width="168" height="24" rx="3"/>
-  <rect class="ink-sub" x="68" y="190" width="128" height="11" rx="2"/>
+  <!-- 行 1: 双栏大标题水平对齐 -->
+  <rect class="ink-head" x="64" y="176" width="180" height="24" rx="3"/>
+  <rect class="ink-head" x="268" y="176" width="180" height="24" rx="3"/>
 
-  <!-- 朱砂立柱金句提炼锚点 (RFC-004 规范) -->
-  <rect class="crimson" x="68" y="222" width="6" height="84" rx="2"/>
-  <rect class="ink-head" x="84" y="226" width="152" height="11" rx="2"/>
-  <rect class="ink-head" x="84" y="247" width="152" height="11" rx="2"/>
-  <rect class="ink-head" x="84" y="268" width="124" height="11" rx="2"/>
-  <rect class="ink-head" x="84" y="289" width="140" height="11" rx="2"/>
+  <!-- 行 2: 导读横线水平对齐 -->
+  <rect class="ink-sub" x="64" y="212" width="140" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="212" width="150" height="10" rx="2"/>
 
-  <!-- 正文报道流 -->
-  <rect class="ink-sub" x="68" y="328" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="68" y="349" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="68" y="370" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="68" y="391" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="68" y="412" width="118" height="10" rx="2"/>
+  <!-- 行 3: 核心模块上下边界对齐 -->
+  <rect class="crimson" x="64" y="236" width="6" height="80" rx="2"/>
+  <rect class="ink-head" x="80" y="240" width="164" height="10" rx="2"/>
+  <rect class="ink-head" x="80" y="260" width="164" height="10" rx="2"/>
+  <rect class="ink-head" x="80" y="280" width="132" height="10" rx="2"/>
+  <rect class="ink-head" x="80" y="300" width="150" height="10" rx="2"/>
 
-  <!-- 7. 右栏：【报眼要闻 & 微言速测】 -->
-  <!-- 报眼大标 -->
-  <rect class="ink-head" x="276" y="156" width="168" height="18" rx="3"/>
-  <rect class="ink-sub" x="276" y="186" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="276" y="206" width="142" height="10" rx="2"/>
+  <rect class="card-bg" x="268" y="236" width="180" height="80" rx="4"/>
+  <rect class="card-border" x="268" y="236" width="180" height="80" rx="4" fill="none" stroke-width="2"/>
+  <rect class="ink-head" x="284" y="258" width="148" height="10" rx="2"/>
+  <rect class="crimson" x="284" y="282" width="108" height="10" rx="2"/>
 
-  <!-- 微言速测实体框 -->
-  <rect class="card-bg" x="276" y="234" width="168" height="72" rx="4"/>
-  <rect class="card-border" x="276" y="234" width="168" height="72" rx="4" fill="none" stroke-width="2"/>
-  <!-- 速测题干横线 -->
-  <rect class="ink-head" x="292" y="254" width="136" height="9" rx="2"/>
-  <rect class="crimson" x="292" y="275" width="98" height="9" rx="2"/>
+  <!-- 行 4: 正文每行基线严格对齐 -->
+  <rect class="ink-sub" x="64" y="336" width="180" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="336" width="180" height="10" rx="2"/>
 
-  <!-- 底部典藏简讯 -->
-  <rect class="ink-sub" x="276" y="328" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="276" y="349" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="276" y="370" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="276" y="391" width="168" height="10" rx="2"/>
-  <rect class="ink-sub" x="276" y="412" width="106" height="10" rx="2"/>
+  <rect class="ink-sub" x="64" y="356" width="180" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="356" width="180" height="10" rx="2"/>
+
+  <rect class="ink-sub" x="64" y="376" width="180" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="376" width="180" height="10" rx="2"/>
+
+  <rect class="ink-sub" x="64" y="396" width="180" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="396" width="180" height="10" rx="2"/>
+
+  <rect class="ink-sub" x="64" y="416" width="124" height="10" rx="2"/>
+  <rect class="ink-sub" x="268" y="416" width="112" height="10" rx="2"/>
 </svg>

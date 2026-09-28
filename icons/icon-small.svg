@@ -4,7 +4,7 @@
     .ink { fill: #1A1918; }
     .ink-sub { fill: #1A1918; fill-opacity: 0.38; }
     .ink-head { fill: #1A1918; fill-opacity: 0.88; }
-    .rule { stroke: #1A1918; stroke-opacity: 0.20; }
+    .rule-faint { stroke: #1A1918; stroke-opacity: 0.20; }
     .crimson { fill: #A31D1D; }
     .on-crimson { fill: #F8F6F0; }
 
@@ -13,51 +13,56 @@
       .ink { fill: #ECE8DF; }
       .ink-sub { fill: #ECE8DF; fill-opacity: 0.38; }
       .ink-head { fill: #ECE8DF; fill-opacity: 0.88; }
-      .rule { stroke: #ECE8DF; stroke-opacity: 0.22; }
+      .rule-faint { stroke: #ECE8DF; stroke-opacity: 0.22; }
       .crimson { fill: #C52828; }
       .on-crimson { fill: #16181D; }
     }
   </style>
 
   <!-- 1. 新闻纸底板 -->
-  <rect class="plate" width="512" height="512" rx="112"/>
+  <rect class="plate" width="512" height="512" rx="108"/>
 
-  <!-- 2. 牛津双线 (更粗更稳) -->
-  <rect class="ink" x="64" y="74" width="240" height="22" rx="4"/>
-  <rect class="ink" x="64" y="108" width="240" height="10" rx="2"/>
+  <!-- ==================== 顶部报头 (Y: 60 ~ 152) ==================== -->
+  <!-- 牛津双线 (小尺寸强化加粗) -->
+  <rect class="ink" x="64" y="68" width="268" height="24" rx="4"/>
+  <rect class="ink" x="64" y="104" width="268" height="10" rx="2"/>
 
-  <!-- 3. 右上角：朱砂印泥方印 (略微放大以保证 32px 识别力) -->
-  <g transform="translate(332, 64)">
-    <rect class="crimson" width="116" height="116" rx="22"/>
-    <path class="on-crimson" d="M58 20 C58 40 44 58 22 58 C44 58 58 76 58 96 C58 76 72 58 94 58 C72 58 58 40 58 20 Z"/>
+  <!-- 右上角朱砂印 (X: 356~448, Y: 60~152，与右栏严格对齐) -->
+  <g transform="translate(356, 60)">
+    <rect class="crimson" width="92" height="92" rx="18"/>
+    <path class="on-crimson" d="M46 16 C46 32 35 46 18 46 C35 46 46 60 46 76 C46 60 57 46 74 46 C57 46 46 32 46 16 Z"/>
   </g>
 
-  <!-- 4. 双栏分隔竖线 -->
-  <line class="rule" x1="256" y1="152" x2="256" y2="432" stroke-width="4"/>
+  <!-- 报头发丝线 -->
+  <line class="rule-faint" x1="64" y1="164" x2="448" y2="164" stroke-width="2.5"/>
 
-  <!-- 5. 左栏 (块面化报道) -->
-  <rect class="ink-head" x="64" y="156" width="172" height="36" rx="4"/>
-  
-  <!-- 朱砂立柱与要闻 -->
-  <rect class="crimson" x="64" y="212" width="10" height="96" rx="3"/>
-  <rect class="ink-head" x="86" y="216" width="150" height="18" rx="3"/>
-  <rect class="ink-head" x="86" y="248" width="150" height="18" rx="3"/>
-  <rect class="ink-head" x="86" y="280" width="118" height="18" rx="3"/>
+  <!-- 中央分栏线 -->
+  <line class="rule-faint" x1="256" y1="176" x2="256" y2="432" stroke-width="3"/>
 
-  <!-- 下部报道块 -->
-  <rect class="ink-sub" x="64" y="332" width="172" height="18" rx="3"/>
-  <rect class="ink-sub" x="64" y="364" width="172" height="18" rx="3"/>
-  <rect class="ink-sub" x="64" y="396" width="124" height="18" rx="3"/>
+  <!-- ==================== 正文排版 (块面严密水平对齐) ==================== -->
+  <!-- 大标题行: Y=180, H=32 -->
+  <rect class="ink-head" x="64" y="180" width="176" height="32" rx="4"/>
+  <rect class="ink-head" x="272" y="180" width="176" height="32" rx="4"/>
 
-  <!-- 6. 右栏 -->
-  <rect class="ink-head" x="276" y="156" width="172" height="28" rx="4"/>
-  <rect class="ink-sub" x="276" y="200" width="172" height="18" rx="3"/>
-  <rect class="ink-sub" x="276" y="232" width="144" height="18" rx="3"/>
+  <!-- 核心展示行: Y=230, H=96 -->
+  <!-- 左栏：朱砂立柱与要闻 -->
+  <rect class="crimson" x="64" y="230" width="10" height="96" rx="3"/>
+  <rect class="ink-head" x="84" y="234" width="156" height="18" rx="3"/>
+  <rect class="ink-head" x="84" y="268" width="156" height="18" rx="3"/>
+  <rect class="ink-head" x="84" y="302" width="124" height="18" rx="3"/>
 
-  <rect class="crimson" x="276" y="274" width="172" height="32" rx="4" fill-opacity="0.12"/>
-  <rect class="crimson" x="290" y="282" width="108" height="16" rx="3"/>
+  <!-- 右栏：速测卡片 (上下高度 Y: 230~326 绝对对齐) -->
+  <rect class="crimson" x="272" y="230" width="176" height="96" rx="6" fill-opacity="0.10"/>
+  <rect class="ink-head" x="290" y="254" width="140" height="18" rx="3"/>
+  <rect class="crimson" x="290" y="288" width="108" height="18" rx="3"/>
 
-  <rect class="ink-sub" x="276" y="332" width="172" height="18" rx="3"/>
-  <rect class="ink-sub" x="276" y="364" width="172" height="18" rx="3"/>
-  <rect class="ink-sub" x="276" y="396" width="118" height="18" rx="3"/>
+  <!-- 正文流动段落: Y=348, Y=382, Y=416 绝对水平对齐 -->
+  <rect class="ink-sub" x="64" y="348" width="176" height="18" rx="3"/>
+  <rect class="ink-sub" x="272" y="348" width="176" height="18" rx="3"/>
+
+  <rect class="ink-sub" x="64" y="382" width="176" height="18" rx="3"/>
+  <rect class="ink-sub" x="272" y="382" width="176" height="18" rx="3"/>
+
+  <rect class="ink-sub" x="64" y="416" width="120" height="18" rx="3"/>
+  <rect class="ink-sub" x="272" y="416" width="112" height="18" rx="3"/>
 </svg>
