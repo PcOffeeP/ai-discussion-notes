@@ -39,4 +39,6 @@ v0.4.7 包含本地并发存储、同步应答保护、服务端可靠提交及�
 
 本机截至发布准备阶段：Node v22.22.1，完整回归 82/82，通过版本及同步资产检查。Java 与 Gradle 缓存缺失，所以本机没有执行原生测试和 APK 编译；GitHub Actions 的运行结论才是本次远端原生构建证据。Android 设备集成测试不会随当前 CI 自动运行，不声称真机验收通过。
 
+首次远端尝试通过了 JS 和资产检查，但原生测试编译发现不支持 `Files.readString`。现已改为兼容的字节读取及 UTF-8 解码，保留原断言；失败尝试没有发布 Release，修复后重新推送验证。
+
 发布与构建入口：[v0.4.7 Release](https://github.com/PcOffeeP/ai-discussion-notes/releases/tag/v0.4.7)、[APK 流水线](https://github.com/PcOffeeP/ai-discussion-notes/actions/workflows/build-apk.yml)。
