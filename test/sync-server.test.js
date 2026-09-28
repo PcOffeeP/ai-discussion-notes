@@ -3,6 +3,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const os = require("node:os");
+function temporaryFile(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidn-sync-test-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return path.join(dir, "notes.json");
+}
 
 const { createSyncServer } = require("../server/sync-server.js");
 require("../core/note.js");
@@ -12,9 +18,10 @@ require("../adapters/chrome/cloud-sync-note-repo.js");
 
 const AIDN = globalThis.AIDN;
 
-test("sync-server: 未提供或错误的 Secret Token 返回 401", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-${Date.now()}.json`);
+test("sync-server: 未提供或错误的 Secret Token 返回 401", async (t) => {
+  const tmpFile = temporaryFile(t);
   const serverInstance = createSyncServer({
+    host: "127.0.0.1",
     secretToken: "my-custom-secret",
     storageFile: tmpFile,
   });
@@ -43,11 +50,12 @@ test("sync-server: 未提供或错误的 Secret Token 返回 401", async () => {
   }
 });
 
-test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与跨端拉取", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-${Date.now()}.json`);
+test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与跨端拉取", async (t) => {
+  const tmpFile = temporaryFile(t);
   const secretToken = "my-private-passphrase-999";
   const serverInstance = createSyncServer({
     secretToken,
+    host: "127.0.0.1",
     storageFile: tmpFile,
   });
   const port = await serverInstance.listen(0);
@@ -135,11 +143,12 @@ test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与
   }
 });
 
-test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到云端并在手机端拉取", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-settings-${Date.now()}.json`);
+test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到云端并在手机端拉取", async (t) => {
+  const tmpFile = temporaryFile(t);
   const secretToken = "my-secret-settings-sync";
   const serverInstance = createSyncServer({
     secretToken,
+    host: "127.0.0.1",
     storageFile: tmpFile,
   });
   const port = await serverInstance.listen(0);
@@ -188,4 +197,32 @@ test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到�
     await serverInstance.close();
     if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
   }
+});
+
+test("无默认凭据；坏文件拒绝启动而不覆盖", t => {
+  assert.throws(() => createSyncServer({ secretToken: "" }), /SYNC_SECRET_TOKEN/);
+  assert.throws(() => createSyncServer({ secretToken: "aidn-default-secret" }), /默认/);
+  const file = temporaryFile(t);
+  fs.writeFileSync(file, "broken");
+  assert.throws(() => createSyncServer({ secretToken: "test", storageFile: file }));
+  assert.equal(fs.readFileSync(file, "utf8"), "broken");
+});
+
+test("落盘失败不确认、不修改内存或旧文件；重启恢复原库", async t => {
+  const file = temporaryFile(t); let fail = false;
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: file,
+    fs: { ...fs, renameSync: (...args) => { if (fail) throw new Error("disk full"); return fs.renameSync(...args); } } });
+  const port = await app.listen(0);
+  const send = body => fetch(`http://127.0.0.1:${port}/api/sync`, { method: "POST", headers: { Authorization: "Bearer test" }, body: JSON.stringify(body) });
+  try {
+    const note = AIDN.note.createNote({ id: "one", contentText: "first" });
+    assert.equal((await send({ deltas: [note] })).status, 200);
+    const before = fs.readFileSync(file, "utf8");
+    fail = true;
+    assert.equal((await send({ deltas: [{ ...note, contentText: "lost", updatedAt: new Date(Date.now() + 1).toISOString() }] })).status, 503);
+    assert.equal(app.getNotes()[0].contentText, "first");
+    assert.equal(fs.readFileSync(file, "utf8"), before);
+    for (const payload of [null, [], { settings: { deepseekApiKey: 123 } }, { deltas: [{ id: "bad" }] }]) assert.equal((await send(payload)).status, 400);
+  } finally { await app.close(); }
+  assert.equal(createSyncServer({ secretToken: "test", storageFile: file }).getNotes()[0].contentText, "first");
 });

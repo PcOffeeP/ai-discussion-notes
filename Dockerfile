@@ -3,12 +3,13 @@ WORKDIR /app
 
 # 仅需生产环境与运行服务
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 COPY server/ ./server/
 
 ENV PORT=3000
-ENV SYNC_SECRET_TOKEN=aidn-default-secret
+ENV SYNC_STORAGE_FILE=/data/cloud-notes.json
+VOLUME ["/data"]
 
 EXPOSE 3000
 
