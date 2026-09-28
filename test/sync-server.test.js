@@ -206,6 +206,11 @@ test("无默认凭据；坏文件拒绝启动而不覆盖", t => {
   fs.writeFileSync(file, "broken");
   assert.throws(() => createSyncServer({ secretToken: "test", storageFile: file }));
   assert.equal(fs.readFileSync(file, "utf8"), "broken");
+  for (const raw of ["null", "17", "{}", '{"notes":[null]}']) {
+    fs.writeFileSync(file, raw);
+    assert.throws(() => createSyncServer({ secretToken: "test", storageFile: file }), /格式损坏/);
+    assert.equal(fs.readFileSync(file, "utf8"), raw);
+  }
 });
 
 test("落盘失败不确认、不修改内存或旧文件；重启恢复原库", async t => {
@@ -225,4 +230,25 @@ test("落盘失败不确认、不修改内存或旧文件；重启恢复原库",
     for (const payload of [null, [], { settings: { deepseekApiKey: 123 } }, { deltas: [{ id: "bad" }] }]) assert.equal((await send(payload)).status, 400);
   } finally { await app.close(); }
   assert.equal(createSyncServer({ secretToken: "test", storageFile: file }).getNotes()[0].contentText, "first");
+});
+
+test("过大请求、畸形 Host 和非对象负载不破坏服务；空凭据启动无泄漏", async t => {
+  const { spawnSync } = require("node:child_process");
+  const startup = spawnSync(process.execPath, [path.join(__dirname, "../server/sync-server.js")], {
+    env: { ...process.env, SYNC_SECRET_TOKEN: "" }, encoding: "utf8",
+  });
+  assert.equal(startup.status, 1);
+  assert.doesNotMatch(startup.stdout + startup.stderr, /aidn-default-secret/);
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: temporaryFile(t), maxBodyBytes: 128 });
+  const port = await app.listen(0);
+  try {
+    const endpoint = `http://127.0.0.1:${port}`;
+    const large = await fetch(endpoint + "/api/sync", { method: "POST", headers: { Authorization: "Bearer test" }, body: "x".repeat(256) });
+    assert.equal(large.status, 413);
+    const health = await fetch(endpoint + "/health", { headers: { Host: "bad:host:value" } });
+    assert.equal(health.status, 200);
+    const invalid = await fetch(endpoint + "/api/sync", { method: "POST", headers: { Authorization: "Bearer test" }, body: "null" });
+    assert.equal(invalid.status, 400);
+    assert.equal((await fetch(endpoint + "/health")).status, 200);
+  } finally { await app.close(); }
 });

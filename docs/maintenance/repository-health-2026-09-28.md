@@ -42,3 +42,10 @@
 - build:mobile 使用已有 CLI，不通过 npx 下载工具；未构建预览不声称安装包版本。
 - Node v22.22.1；真实修复工作树 npm test：75/75，退出 0；npm run build:mobile、npm run check、node scripts/check-project.js --assets 均退出 0。
 - 本机 Java 运行环境未安装，Gradle 缓存不存在；未运行 APK 编译/原生测试，不安装或下载环境。CI 原生验证尚待实际运行。
+
+### 4. 请求与损坏数据的补充边界复核
+
+- 拒绝 null/数字/缺少 notes 数组等持久文件形状，避免误识为空库；本地非记录项同样报错。
+- 校验批注及文本字段，防止畸形记录进入展示链路。
+- 增加超大请求 413、畸形 Host、无效请求后继续服务及空凭据启动不泄漏的最小验证。
+- node --test test/storage-note-repo.test.js test/sync-server.test.js：11/11，退出 0，临时数据及本机回环测试。

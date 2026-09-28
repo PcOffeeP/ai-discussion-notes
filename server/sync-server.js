@@ -14,6 +14,7 @@ function createSyncServer(options = {}) {
   if (io.existsSync(storageFile)) {
     // 损坏文件必须由管理员恢复，不能当空库覆盖。
     const loaded = JSON.parse(io.readFileSync(storageFile, "utf8"));
+    if (!Array.isArray(loaded) && (!loaded || typeof loaded !== "object" || !Array.isArray(loaded.notes))) throw new Error("云端笔记文件格式损坏");
     state = Array.isArray(loaded) ? { ...state, notes: loaded } : { ...state, ...loaded };
     if (!Array.isArray(state.notes) || state.notes.some(n => !validNote(n))) throw new Error("云端笔记文件格式损坏");
   }
@@ -36,11 +37,11 @@ function createSyncServer(options = {}) {
   function timestamp(n) { return Date.parse(n.updatedAt || n.createdAt) || 0; }
   function validNote(n) {
     return n && typeof n === "object" && !Array.isArray(n) && typeof n.id === "string" && n.id.length > 0 &&
-      Number.isFinite(Date.parse(n.updatedAt || n.createdAt)) &&
+      typeof (n.updatedAt || n.createdAt) === "string" && Number.isFinite(Date.parse(n.updatedAt || n.createdAt)) &&
       (!n.deletedAt || typeof n.deletedAt === "string" && Number.isFinite(Date.parse(n.deletedAt))) &&
       (!n.metadata || typeof n.metadata === "object" && !Array.isArray(n.metadata)) &&
-      (!n.thoughts || Array.isArray(n.thoughts)) &&
-      ["contentText", "contentMarkdown", "contentHtml"].every(k => n[k] === undefined || typeof n[k] === "string");
+      (!n.thoughts || Array.isArray(n.thoughts) && n.thoughts.every(t => t && typeof t.id === "string" && typeof t.text === "string" && typeof t.createdAt === "string" && Number.isFinite(Date.parse(t.createdAt)))) &&
+      ["contentText", "contentMarkdown", "contentHtml", "source", "sourceType", "conversationTitle", "conversationUrl"].every(k => n[k] === undefined || typeof n[k] === "string");
   }
   function parseJsonBody(req) {
     return new Promise((resolve, reject) => {

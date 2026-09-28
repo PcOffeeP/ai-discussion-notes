@@ -13,7 +13,8 @@
       const data = await kv.get("notes");
       const raw = data.notes || [];
       if (!Array.isArray(raw)) throw new Error("笔记存储格式损坏，请先备份");
-      const notes = raw.map(AIDN.note.migrate).filter(Boolean);
+      if (raw.some(n => !n || typeof n !== "object" || Array.isArray(n))) throw new Error("笔记存储格式损坏，请先备份");
+      const notes = raw.map(AIDN.note.migrate);
       if (notes.some((n, i) => n !== raw[i])) await kv.set({ notes });
       return notes;
     }
