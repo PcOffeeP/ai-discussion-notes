@@ -1,14 +1,15 @@
 {
   "name": "ai-discussion-notes",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": true,
   "description": "Save the best things you learn from AI. (Chrome MV3 extension)",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "build:icons": "node scripts/generate-icons.js",
     "serve": "python3 -m http.server 8080",
-    "build:mobile": "node scripts/build-mobile-dist.js && npx cap sync android",
-    "start:sync": "node server/sync-server.js"
+    "build:mobile": "node scripts/build-mobile-dist.js && cap sync android",
+    "start:sync": "node server/sync-server.js",
+    "check": "node scripts/check-project.js"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.2",
@@ -17,5 +18,8 @@
   },
   "dependencies": {
     "@capacitor/core": "^8.5.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

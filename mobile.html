@@ -695,7 +695,7 @@
       <h3>应用版本与在线升级</h3>
       <p class="section-desc">一键检查并下载最新安装包，随时保持最新功能。</p>
       <div class="drawer-version-row">
-        当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">v0.4.0</strong>
+        当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">开发预览</strong>
       </div>
       <div class="settings-actions">
         <button id="check-update-btn" class="ghost-btn">检查新版本 ✦</button>
@@ -1080,15 +1080,10 @@
       });
 
       // 应用内检查更新与一键在线升级 (带精准版本号控制与比对)
-      const buildInfo = window.__APP_BUILD_INFO__ || {
-        version: "0.4.2",
-        versionCode: 402,
-        commit: "dev",
-        buildTime: "",
-      };
+      const buildInfo = window.__APP_BUILD_INFO__ || null;
 
       const appCurrentVerEl = document.getElementById("app-current-ver");
-      if (appCurrentVerEl) {
+      if (appCurrentVerEl && buildInfo) {
         appCurrentVerEl.textContent = `v${buildInfo.version} (Build ${buildInfo.versionCode}${buildInfo.commit ? ' · ' + buildInfo.commit : ''})`;
       }
 
@@ -1122,6 +1117,10 @@
       }
 
       async function checkForUpdates(manual = false) {
+        if (!buildInfo) {
+          if (manual && updateStatusMsg) updateStatusMsg.textContent = "开发预览没有安装包版本，请在已构建的应用中检查更新";
+          return;
+        }
         if (manual && updateStatusMsg) updateStatusMsg.textContent = "正在云端检查更新…";
         try {
           // 优先查 /releases/latest 官方正式发版，若无再兜底 /releases/tags/latest-mobile

@@ -29,10 +29,16 @@ jobs:
           cache: 'gradle'
 
       - name: Install NPM Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Test and Check Release Contracts
+        run: npm test && npm run check
 
       - name: Bundle Web Assets for Mobile
         run: npm run build:mobile
+
+      - name: Verify Synced Mobile Assets
+        run: node scripts/check-project.js --assets
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew
@@ -40,7 +46,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew testDebugUnitTest assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

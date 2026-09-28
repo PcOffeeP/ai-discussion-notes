@@ -23,7 +23,8 @@ function copyDirRecursive(src, dest) {
 
 // 1. 读取版本号与计算版本代码
 const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf-8"));
-const version = pkg.version || "0.4.1";
+const version = pkg.version;
+if (!/^\d+\.\d+\.\d+$/.test(version) || version.split(".").some(v => Number(v) > 99)) throw new Error("版本必须为 0..99 的三段数字；拒绝覆盖构建资产");
 
 let commitHash = "unknown";
 try {

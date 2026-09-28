@@ -21,6 +21,7 @@ function withDom(html, files, fn) {
     }
     return fn({ document: dom.window.document, window: dom.window, AIDN: globalThis.AIDN });
   } finally {
+    dom.window.close();
     if (prevNode === undefined) delete globalThis.Node;
     else globalThis.Node = prevNode;
   }
