@@ -15,7 +15,7 @@ test("导入完整校验，保留无关笔记，按数值时间合并，等时�
   const next = AIDN.noteImport.merge(current, [make("same", "latest", "2026-09-28T00:00:01Z")]);
   assert.equal(next.notes.length, 2);
   assert.equal(next.notes.find(n => n.id === "same").contentText, "latest");
-  for (const invalid of [[null], [original, { id: "bad" }], [original, original], [{ ...original, thoughts: [null] }]]) assert.throws(() => AIDN.noteImport.validate(invalid));
+  for (const invalid of [[null], [original, { id: "bad" }], [original, original], [{ ...original, thoughts: [null] }], [{ ...original, sourceType: 12 }], [{ ...original, createdAt: [2026] }]]) assert.throws(() => AIDN.noteImport.validate(invalid));
 });
 test("导入配额失败是一次提交，原库完整保留", async () => {
   const memory = AIDN.createMemoryKV({ notes: [make("original", "keep")] });

@@ -7,12 +7,12 @@
     const ids = new Set();
     return raw.map((n, i) => {
       if (!n || typeof n !== "object" || Array.isArray(n) || typeof n.id !== "string" || !n.id.trim() || ids.has(n.id) ||
-          !Number.isFinite(Date.parse(n.createdAt)) || (n.updatedAt !== undefined && !Number.isFinite(Date.parse(n.updatedAt))) ||
+          typeof n.createdAt !== "string" || !Number.isFinite(Date.parse(n.createdAt)) || (n.updatedAt !== undefined && (typeof n.updatedAt !== "string" || !Number.isFinite(Date.parse(n.updatedAt)))) ||
           n.deletedAt || (n.schemaVersion !== undefined && ![1, 2, 3].includes(n.schemaVersion)) ||
           !["content", "contentText", "contentMarkdown"].some(k => typeof n[k] === "string") ||
-          ["content", "contentText", "contentMarkdown", "contentHtml", "source", "conversationTitle", "conversationUrl"].some(k => n[k] !== undefined && typeof n[k] !== "string") ||
+          ["content", "contentText", "contentMarkdown", "contentHtml", "source", "sourceType", "conversationTitle", "conversationUrl"].some(k => n[k] !== undefined && typeof n[k] !== "string") ||
           (n.metadata !== undefined && (!n.metadata || typeof n.metadata !== "object" || Array.isArray(n.metadata))) ||
-          (n.thoughts !== undefined && (!Array.isArray(n.thoughts) || n.thoughts.some(t => !t || typeof t.text !== "string" || typeof t.id !== "string" || !Number.isFinite(Date.parse(t.createdAt)))))) {
+          (n.thoughts !== undefined && (!Array.isArray(n.thoughts) || n.thoughts.some(t => !t || typeof t.text !== "string" || typeof t.id !== "string" || typeof t.createdAt !== "string" || !Number.isFinite(Date.parse(t.createdAt)))))) {
         throw new Error(`第 ${i + 1} 条笔记格式无效或 ID 重复；原库未改动`);
       }
       ids.add(n.id);
