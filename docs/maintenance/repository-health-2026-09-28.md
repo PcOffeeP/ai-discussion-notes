@@ -1,8 +1,30 @@
 # 仓库体检整改记录（2026-09-28）
 
-起点：a98c018373202793e318fd2fa9296ba0bc396759。实施分支 feature/repository-health-fixes。
-原工作区 package.json、preview.html 已暂存的版本回退由用户保留；不纳入整改。
-只合并本地 main；推送将触发发布与 Render 部署，不在本次执行中。
+最后更新：2026-09-29。修复起点：`a98c018373202793e318fd2fa9296ba0bc396759`。六批整改截止提交：`3ee178c`，实施分支：`feature/repository-health-fixes`。
+
+本记录保留 2026-09-28 起的审计与整改历史。2026-09-29 用户新增授权：更新两份维护文档、一起提交，并在 GitHub 发布下一版本 `v0.4.7`。先前“仅本地、不推送”的操作范围已被本次发布授权更新。
+
+本次发布包含已验收的六批修复，不宣称全部审计事项关闭。原工作区的 `package.json`、`preview.html` 版本回退未纳入整改或发布；原工作区仍保留用户自己的修改。
+
+## 当前状态与发版范围
+
+| 项目 | 当前证据及结论 |
+| --- | --- |
+| 已实现修复 | F1、F2、F3、F4、F5、F7、F8、F9、F10、F11，以及独立复审发现的四项遗漏 |
+| 最新本地回归 | 2026-09-29 在六批整改截止提交执行 `npm test`：82/82 通过，0 失败、0 跳过，退出码 0 |
+| 版本及移动资产 | `npm run build:mobile`、`npm run check`、`node scripts/check-project.js --assets` 已通过；版本 0.4.7，Android versionCode 407 |
+| 独立审查 | 完整修复差异审查后，针对 `95437ae..7e52377` 复审通过；后续导入形状收紧由主 Agent 专项及完整回归验证 |
+| 本机原生验证 | 本机缺少 Java 和 Gradle 缓存，没有运行原生测试、APK 构建或设备测试；原生单元测试和 APK 构建交由 GitHub Actions |
+| GitHub 发布证据 | [v0.4.7 Release](https://github.com/PcOffeeP/ai-discussion-notes/releases/tag/v0.4.7)、[APK 流水线](https://github.com/PcOffeeP/ai-discussion-notes/actions/workflows/build-apk.yml)；以实际运行结论、Release 附件和附件元数据为准，版本声明或提交不代替发布成功 |
+
+### 未纳入 v0.4.7 的待决事项
+
+- **F6 全端删除**：用户已选择全端同步删除，但旧客户端是否必须升级仍待确定。目前 `delete/clear` 仍只移除本机记录，后续同步可能使记录复活。不能把已发送 `protocolVersion: 2` 视为删除标记已实现。
+- **签名迁移**：仍使用现有 `debug.keystore` 保持安装连续性；没有迁移证书，也没有增加外部私密签名支持。公开签名的发布身份风险保留。
+- **云端持久化**：外部路径、Docker 卷和存储重建检测已实现；Render 模板仍是无持久盘的 free 配置。没有开通持久盘、修改线上存储或证明线上数据已持久化。
+- **未来设计目标**：云端定时画像、号外缓存、画像持久化与按复习计数调度仍是未来能力，本次没有实施。
+
+详细部署条件和发布操作见 [部署与发布说明](deployment-and-release.md)。以下分批记录中的测试数量、环境限制和“未运行”均对应当时的执行，不能当成最新 CI 状态。
 
 ## 用户确认的语义
 
