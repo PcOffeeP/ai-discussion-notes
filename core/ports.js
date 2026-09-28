@@ -10,8 +10,9 @@
 //   clear(): Promise<number>           // 返回清除条数
 //   生产适配器: adapters/chrome/storage-note-repo.js (service worker)
 //   远程门面:   adapters/chrome/runtime-client.js   (content / notes page)
-//   测试适配器: adapters/test/memory-note-repo.js
-//   未来:      CloudSyncNoteRepo（云同步，实现同一接口即可无缝替换）
+//   原子批注操作（生产适配器）：changeThoughts(id, {add?: Thought, remove?: string}): Promise<Note|null>
+//   测试 KV: adapters/chrome/kv.js (MemoryKV)
+//   同步: adapters/chrome/cloud-sync-note-repo.js（保持公共方法；内部使用本地事务）
 //
 // @interface CaptureSource —— 捕获来源端口（推模式）
 //   start(emit: (raw: RawCapture) => void): void

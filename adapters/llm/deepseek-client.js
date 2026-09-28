@@ -69,16 +69,20 @@
     const defaultModel = config.model || DEFAULT_MODEL;
     const defaultApiKey = config.apiKey || "";
     const rawFetch = config.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(global) : null);
-    const fetchFn = rawFetch && (async (url, options) => {
+    async function requestJson(url, options, label = "DeepSeek API 请求失败") {
       const controller = new AbortController();
       let timer;
       try {
         return await Promise.race([
-          rawFetch(url, { ...options, signal: controller.signal }),
+          (async () => {
+            const response = await rawFetch(url, { ...options, signal: controller.signal });
+            if (!response.ok) throw new Error(`${label} [HTTP ${response.status}]`);
+            return await response.json();
+          })(),
           new Promise((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("请求超时")); }, config.timeoutMs || 20000); }),
         ]);
       } finally { clearTimeout(timer); }
-    });
+    }
 
     /**
      * 生成头版号外自测
@@ -89,7 +93,7 @@
       const model = params.model || defaultModel;
 
       // 若没有提供 API Key，降级使用启发式本地装配
-      if (!apiKey || !fetchFn) {
+      if (!apiKey || !rawFetch) {
         return buildHeuristicFallbackIssue(params);
       }
 
@@ -103,7 +107,7 @@
       const userPrompt = promptBuilder.buildRecallUserPrompt(params);
 
       const endpoint = `${baseUrl}/chat/completions`;
-      const resp = await fetchFn(endpoint, {
+      const result = await requestJson(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,12 +124,6 @@
         }),
       });
 
-      if (!resp.ok) {
-        const errText = await resp.text().catch(() => "");
-        throw new Error(`DeepSeek API 请求失败 [HTTP ${resp.status}]`);
-      }
-
-      const result = await resp.json();
       const content = result?.choices?.[0]?.message?.content;
       if (!content) {
         throw new Error("DeepSeek API 返回了空内容");
@@ -143,7 +141,7 @@
       const baseUrl = (params.baseUrl || defaultBaseUrl).replace(/\/+$/, "");
       const model = params.model || defaultModel;
 
-      if (!apiKey || !fetchFn || recentNotes.length === 0) {
+      if (!apiKey || !rawFetch || recentNotes.length === 0) {
         return buildHeuristicFallbackProfile(recentNotes);
       }
 
@@ -157,7 +155,7 @@
       const userPrompt = promptBuilder.buildProfileUserPrompt(recentNotes);
 
       const endpoint = `${baseUrl}/chat/completions`;
-      const resp = await fetchFn(endpoint, {
+      const result = await requestJson(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,11 +172,6 @@
         }),
       });
 
-      if (!resp.ok) {
-        return buildHeuristicFallbackProfile(recentNotes);
-      }
-
-      const result = await resp.json();
       const content = result?.choices?.[0]?.message?.content;
       if (!content) {
         return buildHeuristicFallbackProfile(recentNotes);
@@ -202,12 +195,12 @@
       if (!apiKey) {
         throw new Error("请先填写 DeepSeek API Key");
       }
-      if (!fetchFn) {
+      if (!rawFetch) {
         throw new Error("当前环境未支持网络请求");
       }
 
       const endpoint = `${baseUrl}/chat/completions`;
-      const resp = await fetchFn(endpoint, {
+      const result = await requestJson(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -218,12 +211,7 @@
           messages: [{ role: "user", content: "ping" }],
           max_tokens: 5,
         }),
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text().catch(() => "");
-        throw new Error(`连接失败 [HTTP ${resp.status}]`);
-      }
+      }, "连接失败");
 
       return { ok: true };
     }

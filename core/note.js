@@ -79,7 +79,8 @@
     }
     return createNote({
       id: raw.id,
-      contentMarkdown: raw.content || raw.contentMarkdown || "",
+      contentMarkdown: raw.content || raw.contentMarkdown || raw.contentText || "",
+      contentText: raw.contentText,
       contentHtml: raw.contentHtml || "",
       source: raw.source,
       sourceType: raw.sourceType,
@@ -107,5 +108,16 @@
     );
   }
 
-  AIDN.note = { SCHEMA_VERSION, createNote, createThought, migrate, search, markdownToText };
+  function changeThoughts(note, operation) {
+    const thoughts = Array.isArray(note.thoughts) ? note.thoughts : [];
+    if (operation.add) {
+      const t = operation.add;
+      if (typeof t.id !== "string" || typeof t.text !== "string" || !Number.isFinite(Date.parse(t.createdAt))) throw new Error("无效批注");
+      return thoughts.some(old => old.id === t.id) ? thoughts : thoughts.concat(t);
+    }
+    if (typeof operation.remove === "string") return thoughts.filter(t => t.id !== operation.remove);
+    throw new Error("无效批注操作");
+  }
+
+  AIDN.note = { changeThoughts, SCHEMA_VERSION, createNote, createThought, migrate, search, markdownToText };
 })(typeof self !== "undefined" ? self : globalThis);

@@ -43,6 +43,14 @@
           return { notes: all, result: all[i] };
         });
       },
+      changeThoughts(id, operation) {
+        return transact(all => {
+          const i = all.findIndex(n => n.id === id && !n.deletedAt);
+          if (i < 0) return { notes: all, result: null };
+          all[i] = { ...all[i], thoughts: AIDN.note.changeThoughts(all[i], operation) };
+          return { notes: all, result: all[i] };
+        });
+      },
       delete(id) { return transact((all) => ({ notes: all.filter((n) => n.id !== id) })); },
       clear() { return transact((all) => ({ notes: [], result: all.filter((n) => !n.deletedAt).length })); },
     };

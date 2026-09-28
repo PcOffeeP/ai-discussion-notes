@@ -59,21 +59,22 @@ function buildHarnessHtml() {
         lastError: null,
         onMessage: { addListener: (fn) => listeners.push(fn) },
         sendMessage(msg, cb) {
+          const respond = response => cb(JSON.parse(JSON.stringify(response)));
           setTimeout(() => {
-            if (msg.action === "notes.list") cb({ ok: true, data: [...store.values()] });
-            else if (msg.action === "notes.delete") { store.delete(msg.payload.id); cb({ ok: true, data: true }); }
+            if (msg.action === "notes.list") respond({ ok: true, data: [...store.values()] });
+            else if (msg.action === "notes.delete") { store.delete(msg.payload.id); respond({ ok: true, data: true }); }
             else if (msg.action === "notes.update") {
               const n = store.get(msg.payload.id);
               if (n) store.set(n.id, Object.assign({}, n, msg.payload.patch));
-              cb({ ok: true, data: n ? store.get(n.id) : null });
+              respond({ ok: true, data: n ? store.get(n.id) : null });
             }
-            else if (msg.action === "notes.clear") { store.clear(); cb({ ok: true, data: true }); }
-            else if (msg.action === "settings.get") cb({ ok: true, data: { captureButtonEnabled: true } });
-            else if (msg.action === "settings.patch") cb({ ok: true, data: msg.payload });
+            else if (msg.action === "notes.clear") { store.clear(); respond({ ok: true, data: true }); }
+            else if (msg.action === "settings.get") respond({ ok: true, data: { captureButtonEnabled: true } });
+            else if (msg.action === "settings.patch") respond({ ok: true, data: msg.payload });
             else if (msg.action === "recall.issue") {
               const notes = msg.payload.notes || [...store.values()];
               const targetNote = notes[0] || {};
-              cb({
+              respond({
                 ok: true,
                 data: {
                   issueId: "issue_harness_01",
@@ -98,7 +99,7 @@ function buildHarnessHtml() {
               });
             }
             else if (msg.action === "recall.profile") {
-              cb({
+              respond({
                 ok: true,
                 data: {
                   updatedAt: new Date().toISOString(),
@@ -108,10 +109,18 @@ function buildHarnessHtml() {
                 },
               });
             }
-            else if (msg.action === "sync.now") {
-              cb({ ok: true, data: { ok: true, syncedCount: 0, serverUpdatesCount: 0, offline: true } });
+            else if (msg.action === "notes.thoughts") {
+              const note = store.get(msg.payload.id);
+              if (note) {
+                const op = msg.payload.operation;
+                store.set(note.id, { ...note, thoughts: op.add ? [...(note.thoughts || []), op.add] : (note.thoughts || []).filter(t => t.id !== op.remove) });
+              }
+              respond({ ok: true, data: note ? store.get(note.id) : null });
             }
-            else cb({ ok: false, error: "unknown action" });
+            else if (msg.action === "sync.now") {
+              respond({ ok: true, data: { ok: true, syncedCount: 0, serverUpdatesCount: 0, offline: true } });
+            }
+            else respond({ ok: false, error: "unknown action" });
           }, 10);
         },
       },

@@ -13,15 +13,8 @@
         return localRepo.save({ ...note, metadata: { ...note.metadata, dirty: true } });
       },
       list: () => localRepo.list(),
-      update(id, patch) {
-        return localRepo.transact(all => {
-          const i = all.findIndex(n => n.id === id && !n.deletedAt);
-          if (i < 0) return { notes: all, result: null };
-          const updatedAt = new Date(Math.max(Date.now(), stamp(all[i]) + 1, Date.parse(patch.updatedAt) || 0)).toISOString();
-          all[i] = { ...all[i], ...patch, updatedAt, metadata: { ...all[i].metadata, ...patch.metadata, dirty: true } };
-          return { notes: all, result: all[i] };
-        });
-      },
+      update: (id, patch) => mutate(id, () => patch),
+      changeThoughts: (id, operation) => mutate(id, note => ({ thoughts: AIDN.note.changeThoughts(note, operation) })),
       delete: id => localRepo.delete(id),
       clear: () => localRepo.clear(),
       sync(options = {}) {
@@ -30,6 +23,16 @@
         return next;
       },
     };
+    function mutate(id, transform) {
+      return localRepo.transact(all => {
+        const i = all.findIndex(n => n.id === id && !n.deletedAt);
+        if (i < 0) return { notes: all, result: null };
+        const patch = transform(all[i]);
+        const updatedAt = new Date(Math.max(Date.now(), stamp(all[i]) + 1, Date.parse(patch.updatedAt) || 0)).toISOString();
+        all[i] = { ...all[i], ...patch, updatedAt, metadata: { ...all[i].metadata, ...patch.metadata, dirty: true } };
+        return { notes: all, result: all[i] };
+      });
+    }
     async function sync({ syncEndpoint, userToken, settings, forceFull, fetchOverride } = {}) {
       let url = (syncEndpoint || "").trim();
       if (url && !url.endsWith("/api/sync") && !url.includes("/api/")) url = url.replace(/\/+$/, "") + "/api/sync";

@@ -20,7 +20,12 @@
   function mergeRemote(current, remote) {
     const local = normalize(current);
     if (!remote || !Number.isFinite(Date.parse(remote.updatedAt))) return local;
-    return Date.parse(remote.updatedAt) > (Date.parse(local.updatedAt) || 0) ? normalize(remote) : local;
+    const incoming = normalize(remote);
+    const difference = Date.parse(incoming.updatedAt) - (Date.parse(local.updatedAt) || 0);
+    // 相同时间采用稳定字段序列排序，双方独立写入同毫秒时仍可收敛。
+    const rank = value => JSON.stringify(fields.map(k => value[k]));
+    return difference > 0 || difference === 0 && rank(incoming) > rank(local) ? incoming : local;
   }
   AIDN.settings = { fields, normalize, change, mergeRemote };
+  if (typeof module !== "undefined" && module.exports) module.exports = AIDN.settings;
 })(typeof self !== "undefined" ? self : globalThis);

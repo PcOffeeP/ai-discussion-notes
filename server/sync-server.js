@@ -3,6 +3,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID, timingSafeEqual } = require("node:crypto");
+const settingsRules = require("../core/settings.js");
 
 function createSyncServer(options = {}) {
   const secretToken = String(options.secretToken ?? process.env.SYNC_SECRET_TOKEN ?? "").trim();
@@ -104,14 +105,8 @@ function createSyncServer(options = {}) {
       }
       let shared = state.settings;
       if (settings && (settings.deepseekApiKey || settings.updatedAt)) {
-        if (!shared?.updatedAt || Date.parse(settings.updatedAt) > Date.parse(shared.updatedAt)) {
-          shared = {
-            deepseekApiKey: settings.deepseekApiKey?.trim() || "",
-            deepseekBaseUrl: settings.deepseekBaseUrl?.trim() || "https://api.deepseek.com/v1",
-            deepseekModel: settings.deepseekModel?.trim() || "deepseek-chat",
-            updatedAt: settings.updatedAt || serverTime,
-          };
-        }
+        const incoming = !settings.updatedAt && !shared?.updatedAt ? { ...settings, updatedAt: serverTime } : settings;
+        shared = settingsRules.mergeRemote(shared || {}, incoming);
       }
       const next = { ...state, notes: Array.from(map.values()), settings: shared };
       try { persist(next); } catch { return reply(res, 503, { error: "Storage commit failed; retry later" }); }

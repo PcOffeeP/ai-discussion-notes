@@ -162,3 +162,12 @@ test("配置 Key 后断网、HTTP 错误、无效响应和超时都显示当前�
     assert.equal((await client.generateCognitiveProfile({ recentNotes: [note] })).generationMode, "offline");
   }
 });
+
+test("模型响应体卡住也受整体超时控制", async () => {
+  const client = AIDN.llm.createDeepSeekClient({ apiKey: "test", timeoutMs: 5, fetchFn: async () => ({ ok: true, json: () => new Promise(() => {}) }) });
+  const params = { notes: [AIDN.note.createNote({ contentText: "原文" })] };
+  const issue = await client.generateRecallIssue(params);
+  assert.equal(issue.generationMode, "offline");
+  assert.equal((await client.generateCognitiveProfile({ recentNotes: params.notes })).generationMode, "offline");
+  await assert.rejects(client.testConnection(), /超时/);
+});

@@ -953,8 +953,14 @@
         const text = recallThoughtInput.value.trim();
         if (!text || !currentTargetNote) return;
         const newThought = AIDN.note.createThought(text);
-        currentTargetNote.thoughts = [...(currentTargetNote.thoughts || []), newThought];
-        await repo.update(currentTargetNote.id, { thoughts: currentTargetNote.thoughts });
+        const id = currentTargetNote.id;
+        try {
+          const saved = await repo.changeThoughts(id, { add: newThought });
+          if (!saved) throw new Error("笔记已删除，请重新选择");
+          if (currentTargetNote?.id === id) currentTargetNote.thoughts = saved.thoughts;
+          const index = currentNotes.findIndex(n => n.id === id);
+          if (index >= 0) currentNotes[index] = saved;
+        } catch (err) { recallThoughtHint.textContent = "保存失败: " + err.message; return; }
         recallThoughtInput.value = "";
         recallThoughtHint.textContent = "研读札记已沉淀收录！";
         setTimeout(() => { recallThoughtHint.textContent = ""; }, 2500);

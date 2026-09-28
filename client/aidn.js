@@ -36,12 +36,15 @@
       async addThought(id, text) {
         const thought = AIDN.note.createThought(text);
         if (!thought.text) return null;
+        if (repo.changeThoughts) return await repo.changeThoughts(id, { add: thought }) ? thought : null;
         const note = (await repo.list()).find((n) => n.id === id);
+        if (!note) return null;
         const thoughts = [...(note && Array.isArray(note.thoughts) ? note.thoughts : []), thought];
         await repo.update(id, { thoughts });
         return thought;
       },
       async removeThought(id, thoughtId) {
+        if (repo.changeThoughts) return Boolean(await repo.changeThoughts(id, { remove: thoughtId }));
         const note = (await repo.list()).find((n) => n.id === id);
         if (!note) return false;
         const thoughts = (Array.isArray(note.thoughts) ? note.thoughts : [])

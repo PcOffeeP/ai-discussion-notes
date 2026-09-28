@@ -96,3 +96,14 @@ test("事务写失败不改变原库，队列恢复后可继续提交", async ()
   await repo.save(AIDN.note.createNote({ id: "next" }));
   assert.equal((await repo.list()).length, 2);
 });
+
+test("并行追加批注的整个操作原子化；追加与删除不覆盖其他批注", async () => {
+  const repo = AIDN.createStorageNoteRepo(AIDN.createMemoryKV());
+  await repo.save(AIDN.note.createNote({ id: "thoughts" }));
+  const client = AIDN.createClient({ repo });
+  const added = await Promise.all([client.addThought("thoughts", "first"), client.addThought("thoughts", "second")]);
+  assert.deepEqual((await repo.list())[0].thoughts.map(t => t.text), ["first", "second"]);
+  await Promise.all([client.removeThought("thoughts", added[0].id), client.addThought("thoughts", "third")]);
+  assert.deepEqual((await repo.list())[0].thoughts.map(t => t.text), ["second", "third"]);
+  assert.equal(await client.addThought("missing", "lost"), null);
+});

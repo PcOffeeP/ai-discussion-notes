@@ -44,7 +44,7 @@
       } catch (_) { /* 同上 */ }
     };
     const notifyingRepo = Object.assign({}, repo);
-    for (const method of ["save", "update", "delete", "clear"]) {
+    for (const method of ["save", "update", "delete", "clear", "changeThoughts"]) {
       notifyingRepo[method] = async (...args) => {
         const result = await repo[method](...args);
         notifyChanged(method);
@@ -56,6 +56,7 @@
       "notes.save": (note) => notifyingRepo.save(AIDN.note.createNote(note)),
       "notes.list": () => repo.list(),
       "notes.update": ({ id, patch }) => notifyingRepo.update(id, patch),
+      "notes.thoughts": ({ id, operation }) => notifyingRepo.changeThoughts(id, operation),
       "notes.delete": ({ id }) => notifyingRepo.delete(id),
       "notes.clear": () => notifyingRepo.clear(),
       "settings.get": () => getSettings(),

@@ -252,3 +252,21 @@ test("过大请求、畸形 Host 和非对象负载不破坏服务；空凭据�
     assert.equal((await fetch(endpoint + "/health")).status, 200);
   } finally { await app.close(); }
 });
+
+test("同版本配置跨端收敛；清空后旧版本不能还原 Key", async t => {
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: temporaryFile(t) });
+  const port = await app.listen(0);
+  const send = async settings => (await fetch(`http://127.0.0.1:${port}/api/sync`, { method: "POST", headers: { Authorization: "Bearer test" }, body: JSON.stringify({ settings, deltas: [] }) })).json();
+  try {
+    const a = { deepseekApiKey: "test-a", updatedAt: "2026-09-28T00:00:00Z" };
+    const b = { deepseekApiKey: "test-b", updatedAt: "2026-09-28T00:00:00.000Z" };
+    await send(a);
+    const res = await send(b);
+    assert.equal(res.settings.deepseekApiKey, "test-b");
+    assert.equal(AIDN.settings.mergeRemote(a, res.settings).deepseekApiKey, "test-b");
+    assert.equal((await send(a)).settings.deepseekApiKey, "test-b");
+    const clear = { deepseekApiKey: "", updatedAt: "2026-09-28T00:00:01Z" };
+    assert.equal((await send(clear)).settings.deepseekApiKey, "");
+    assert.equal((await send(b)).settings.deepseekApiKey, "");
+  } finally { await app.close(); }
+});
