@@ -543,7 +543,7 @@
         <div class="masthead-actions">
           <div id="deepseek-status" class="deepseek-status unconfigured" title="点击配置 DeepSeek API">
             <span class="status-dot"></span>
-            <span class="status-text">DS·启发式</span>
+            <span class="status-text">DS·离线提示</span>
           </div>
           <button id="open-settings-btn" class="masthead-settings-btn" title="报刊设置与笔记库" aria-label="设置">
             <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
@@ -676,7 +676,7 @@
 
     <section class="settings-section">
       <h3>DeepSeek 认知模型配置</h3>
-      <p class="section-desc">未配置时由本地离线引擎出题；配置后启用官方深度推理模型。</p>
+      <p class="section-desc">未配置或请求失败时显示基于当前笔记的离线复习提示；配置后请求指定模型。</p>
       <label class="form-row">
         <span class="form-label">API Key</span>
         <input type="password" id="m-deepseek-key" placeholder="sk-..." />
@@ -695,7 +695,7 @@
       <h3>应用版本与在线升级</h3>
       <p class="section-desc">一键检查并下载最新安装包，随时保持最新功能。</p>
       <div class="drawer-version-row">
-        当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">v0.4.0</strong>
+        当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">开发预览</strong>
       </div>
       <div class="settings-actions">
         <button id="check-update-btn" class="ghost-btn">检查新版本 ✦</button>
@@ -710,6 +710,8 @@
 
   <!-- 脚本装配 (纯前端与 LocalStorage 驱动) -->
   <script src="core/note.js"></script>
+  <script src="core/settings.js"></script>
+  <script src="core/note-import.js"></script>
   <script src="core/group.js"></script>
   <script src="core/recall/prompt-builder.js"></script>
   <script src="core/recall/response-parser.js"></script>
@@ -726,6 +728,24 @@
       const kv = AIDN.createLocalStorageKV("aidn_mobile_");
       const baseRepo = AIDN.createStorageNoteRepo(kv);
       const repo = AIDN.createCloudSyncNoteRepo ? AIDN.createCloudSyncNoteRepo({ localRepo: baseRepo, kv }) : baseRepo;
+
+      const SHARED_SETTINGS_KEY = "aidn_m_shared_settings";
+      function readSharedSettings() {
+        const raw = localStorage.getItem(SHARED_SETTINGS_KEY);
+        if (raw) return AIDN.settings.normalize(JSON.parse(raw));
+        return AIDN.settings.normalize({
+          deepseekApiKey: localStorage.getItem("aidn_m_deepseek_key") || "",
+          deepseekBaseUrl: localStorage.getItem("aidn_m_deepseek_url") || "",
+        });
+      }
+      function applyRemoteSettings(remote) {
+        if (!remote) return;
+        const merged = AIDN.settings.mergeRemote(readSharedSettings(), remote);
+        localStorage.setItem(SHARED_SETTINGS_KEY, JSON.stringify(merged));
+        syncStatusUI();
+        mKeyInput.value = merged.deepseekApiKey;
+        mUrlInput.value = merged.deepseekBaseUrl;
+      }
 
       // Markdown 渲染
       const md = window.markdownit ? window.markdownit({ linkify: true }) : null;
@@ -822,7 +842,7 @@
       ];
 
       function syncStatusUI() {
-        const key = localStorage.getItem("aidn_m_deepseek_key") || "";
+        const key = readSharedSettings().deepseekApiKey;
         const textEl = deepseekStatusEl.querySelector(".status-text");
         if (key.trim()) {
           deepseekStatusEl.className = "deepseek-status connected";
@@ -830,18 +850,18 @@
           deepseekStatusEl.title = "已配置 DeepSeek API Key（点击修改）";
         } else {
           deepseekStatusEl.className = "deepseek-status unconfigured";
-          if (textEl) textEl.textContent = "DS·启发式";
-          deepseekStatusEl.title = "未配置 API Key（使用本地启发式出题，点击配置）";
+          if (textEl) textEl.textContent = "DS·离线提示";
+          deepseekStatusEl.title = "未配置 API Key（使用笔记原文复习提示，点击配置）";
         }
       }
 
       function getDeepSeekClient() {
-        const apiKey = localStorage.getItem("aidn_m_deepseek_key") || "";
-        const baseUrl = localStorage.getItem("aidn_m_deepseek_url") || "https://api.deepseek.com/v1";
-        return AIDN.llm.createDeepSeekClient({ apiKey, baseUrl });
+        const apiKey = readSharedSettings().deepseekApiKey;
+        const baseUrl = readSharedSettings().deepseekBaseUrl;
+        return AIDN.llm.createDeepSeekClient({ apiKey, baseUrl, model: readSharedSettings().deepseekModel });
       }
 
-      async function renderIssue(issue, note) {
+      function renderIssue(issue, note) {
         currentIssue = issue;
         currentTargetNote = note;
 
@@ -879,8 +899,18 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
+      let issueSequence = 0;
       async function shuffleIssue() {
-        if (currentNotes.length === 0) return;
+        const sequence = ++issueSequence;
+        if (currentNotes.length === 0) {
+          currentTargetNote = null;
+          recallQ1Title.textContent = "暂无笔记，请导入或同步后开始复习";
+          recallQ1Sub.textContent = "";
+          recallQ2Title.textContent = ""; recallQ2Text.textContent = "";
+          recallQ3Title.textContent = ""; recallQ3Text.textContent = "";
+          recallAnchorText.textContent = ""; recallOriginalText.textContent = "";
+          return;
+        }
         const randIdx = Math.floor(Math.random() * currentNotes.length);
         const targetNote = currentNotes[randIdx];
 
@@ -895,7 +925,7 @@
           targetNoteId: targetNote.id,
         });
 
-        renderIssue(issue, targetNote);
+        if (sequence === issueSequence) await renderIssue(issue, targetNote);
       }
 
       // 交互行为绑定
@@ -923,20 +953,26 @@
         const text = recallThoughtInput.value.trim();
         if (!text || !currentTargetNote) return;
         const newThought = AIDN.note.createThought(text);
-        currentTargetNote.thoughts = [...(currentTargetNote.thoughts || []), newThought];
-        await repo.update(currentTargetNote.id, { thoughts: currentTargetNote.thoughts });
+        const id = currentTargetNote.id;
+        try {
+          const saved = await repo.changeThoughts(id, { add: newThought });
+          if (!saved) throw new Error("笔记已删除，请重新选择");
+          if (currentTargetNote?.id === id) currentTargetNote.thoughts = saved.thoughts;
+          const index = currentNotes.findIndex(n => n.id === id);
+          if (index >= 0) currentNotes[index] = saved;
+        } catch (err) { recallThoughtHint.textContent = "保存失败: " + err.message; return; }
         recallThoughtInput.value = "";
         recallThoughtHint.textContent = "研读札记已沉淀收录！";
         setTimeout(() => { recallThoughtHint.textContent = ""; }, 2500);
       });
 
-      recallShuffleBtn.addEventListener("click", shuffleIssue);
+      recallShuffleBtn.addEventListener("click", () => shuffleIssue().catch(err => { recallThoughtHint.textContent = "出题失败: " + err.message; }));
 
       // 设置抽屉打开/关闭
       function openDrawer() {
         storedCountEl.textContent = String(currentNotes.length);
-        mKeyInput.value = localStorage.getItem("aidn_m_deepseek_key") || "";
-        mUrlInput.value = localStorage.getItem("aidn_m_deepseek_url") || "https://api.deepseek.com/v1";
+        mKeyInput.value = readSharedSettings().deepseekApiKey;
+        mUrlInput.value = readSharedSettings().deepseekBaseUrl;
         if (mSyncEndpointInput) mSyncEndpointInput.value = localStorage.getItem("aidn_m_sync_endpoint") || "";
         if (mSyncTokenInput) mSyncTokenInput.value = localStorage.getItem("aidn_m_sync_token") || "";
         drawerOverlay.classList.remove("hidden");
@@ -952,8 +988,10 @@
       drawerOverlay.addEventListener("click", closeDrawer);
 
       mSaveKeyBtn.addEventListener("click", () => {
-        localStorage.setItem("aidn_m_deepseek_key", mKeyInput.value.trim());
-        localStorage.setItem("aidn_m_deepseek_url", mUrlInput.value.trim() || "https://api.deepseek.com/v1");
+        const updated = AIDN.settings.change(readSharedSettings(), {
+          deepseekApiKey: mKeyInput.value.trim(), deepseekBaseUrl: mUrlInput.value.trim(),
+        });
+        localStorage.setItem(SHARED_SETTINGS_KEY, JSON.stringify(updated));
         syncStatusUI();
         closeDrawer();
       });
@@ -973,12 +1011,7 @@
 
           if (mSyncStatusMsg) mSyncStatusMsg.textContent = "同步中…";
           try {
-            const localKey = localStorage.getItem("aidn_m_deepseek_key") || "";
-            const localUrl = localStorage.getItem("aidn_m_deepseek_url") || "";
-            const localSettings = localKey ? {
-              deepseekApiKey: localKey,
-              deepseekBaseUrl: localUrl,
-            } : null;
+            const localSettings = readSharedSettings();
 
             const res = await repo.sync({
               syncEndpoint: endpoint,
@@ -997,20 +1030,11 @@
               currentNotes = await repo.list();
               storedCountEl.textContent = String(currentNotes.length);
 
-              // 自动将云端同步的 DeepSeek 配置落地到手机本地
-              if (res.settings && res.settings.deepseekApiKey) {
-                localStorage.setItem("aidn_m_deepseek_key", res.settings.deepseekApiKey);
-                if (res.settings.deepseekBaseUrl) {
-                  localStorage.setItem("aidn_m_deepseek_url", res.settings.deepseekBaseUrl);
-                }
-                syncStatusUI();
-                if (mKeyInput) mKeyInput.value = res.settings.deepseekApiKey;
-                if (mUrlInput && res.settings.deepseekBaseUrl) mUrlInput.value = res.settings.deepseekBaseUrl;
-              }
+              applyRemoteSettings(res.settings);
 
               if (mSyncStatusMsg) {
                 mSyncStatusMsg.textContent = res.offline
-                  ? "已本地标记"
+                  ? "离线，笔记仍待同步"
                   : `同步成功 (拉取 +${res.serverUpdatesCount})`;
               }
               if (res.serverUpdatesCount > 0) {
@@ -1029,46 +1053,43 @@
         if (!file) return;
         importStatusEl.textContent = "导入解析中…";
         try {
+          if (file.size > 50 * 1024 * 1024) throw new Error("文件超过 50MB，请拆分后导入");
           const text = await file.text();
-          const list = JSON.parse(text);
-          if (Array.isArray(list) && list.length > 0) {
-            await repo.clear();
-            for (const item of list) {
-              await repo.save(AIDN.note.migrate(item) || AIDN.note.createNote(item));
-            }
-            currentNotes = await repo.list();
-            importStatusEl.textContent = `成功导入 ${currentNotes.length} 篇！`;
-            storedCountEl.textContent = String(currentNotes.length);
-            shuffleIssue();
-          } else {
-            importStatusEl.textContent = "文件内没有有效笔记数据";
+          const incoming = AIDN.noteImport.validate(JSON.parse(text));
+          const preview = AIDN.noteImport.merge(await baseRepo.list({ includeDeleted: true }), incoming).result;
+          if (preview.conflicts && !confirm(`有 ${preview.conflicts} 条同 ID、同时间但内容不同的笔记。导入将保留双方，额外创建冲突副本。继续导入？`)) {
+            importStatusEl.textContent = "已取消导入，原库未改动";
+            return;
           }
+          const result = await baseRepo.transact(all => AIDN.noteImport.merge(all, incoming));
+          currentNotes = await repo.list();
+          importStatusEl.textContent = `新增 ${result.added} / 更新 ${result.updated} / 保留冲突副本 ${result.conflicts} / 跳过 ${result.skipped}`;
+          storedCountEl.textContent = String(currentNotes.length);
+          await shuffleIssue();
+
         } catch (err) {
           importStatusEl.textContent = "导入失败: " + err.message;
         }
       });
 
       mResetSampleBtn.addEventListener("click", async () => {
-        await repo.clear();
-        for (const item of PRESET_SAMPLE_NOTES) {
-          await repo.save(AIDN.note.createNote(item));
-        }
-        currentNotes = await repo.list();
-        storedCountEl.textContent = String(currentNotes.length);
-        importStatusEl.textContent = "已重载 3 篇经典示范笔记";
-        shuffleIssue();
+        if (!confirm("重载将覆盖 3 篇示范笔记及其批注；个人笔记保留。继续？")) return;
+        try {
+          const samples = PRESET_SAMPLE_NOTES.map(item => AIDN.note.createNote(item));
+          const ids = new Set(samples.map(n => n.id));
+          await baseRepo.transact(all => ({ notes: all.filter(n => !ids.has(n.id)).concat(samples) }));
+          currentNotes = await repo.list();
+          storedCountEl.textContent = String(currentNotes.length);
+          importStatusEl.textContent = "已重载 3 篇示范笔记，个人笔记保留";
+          await shuffleIssue();
+        } catch (err) { importStatusEl.textContent = "重载失败: " + err.message; }
       });
 
       // 应用内检查更新与一键在线升级 (带精准版本号控制与比对)
-      const buildInfo = window.__APP_BUILD_INFO__ || {
-        version: "0.4.2",
-        versionCode: 402,
-        commit: "dev",
-        buildTime: "",
-      };
+      const buildInfo = window.__APP_BUILD_INFO__ || null;
 
       const appCurrentVerEl = document.getElementById("app-current-ver");
-      if (appCurrentVerEl) {
+      if (appCurrentVerEl && buildInfo) {
         appCurrentVerEl.textContent = `v${buildInfo.version} (Build ${buildInfo.versionCode}${buildInfo.commit ? ' · ' + buildInfo.commit : ''})`;
       }
 
@@ -1102,6 +1123,10 @@
       }
 
       async function checkForUpdates(manual = false) {
+        if (!buildInfo) {
+          if (manual && updateStatusMsg) updateStatusMsg.textContent = "开发预览没有安装包版本，请在已构建的应用中检查更新";
+          return;
+        }
         if (manual && updateStatusMsg) updateStatusMsg.textContent = "正在云端检查更新…";
         try {
           // 优先查 /releases/latest 官方正式发版，若无再兜底 /releases/tags/latest-mobile
@@ -1209,30 +1234,17 @@
           currentNotes = await repo.list();
         }
         storedCountEl.textContent = String(currentNotes.length);
-        shuffleIssue();
+        await shuffleIssue();
 
         // 若已配置云同步，后台静默同步一次
         const endpoint = localStorage.getItem("aidn_m_sync_endpoint") || "";
         const token = localStorage.getItem("aidn_m_sync_token") || "";
         if (endpoint) {
-          const localKey = localStorage.getItem("aidn_m_deepseek_key") || "";
-          const localUrl = localStorage.getItem("aidn_m_deepseek_url") || "";
-          const localSettings = localKey ? {
-            deepseekApiKey: localKey,
-            deepseekBaseUrl: localUrl,
-          } : null;
+          const localSettings = readSharedSettings();
 
           repo.sync({ syncEndpoint: endpoint, userToken: token, settings: localSettings })
             .then(async (res) => {
-              if (res && res.settings && res.settings.deepseekApiKey) {
-                localStorage.setItem("aidn_m_deepseek_key", res.settings.deepseekApiKey);
-                if (res.settings.deepseekBaseUrl) {
-                  localStorage.setItem("aidn_m_deepseek_url", res.settings.deepseekBaseUrl);
-                }
-                syncStatusUI();
-                if (mKeyInput) mKeyInput.value = res.settings.deepseekApiKey;
-                if (mUrlInput && res.settings.deepseekBaseUrl) mUrlInput.value = res.settings.deepseekBaseUrl;
-              }
+              applyRemoteSettings(res?.settings);
               if (res && res.serverUpdatesCount > 0) {
                 const sampleIds = ["note_sample_1", "note_sample_2", "note_sample_3"];
                 for (const sid of sampleIds) {
@@ -1247,7 +1259,7 @@
         }
       }
 
-      init();
+      init().catch(err => { importStatusEl.textContent = "初始化失败: " + err.message; });
     })();
   </script>
 </body>

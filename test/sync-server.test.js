@@ -3,6 +3,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const os = require("node:os");
+function temporaryFile(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidn-sync-test-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return path.join(dir, "notes.json");
+}
 
 const { createSyncServer } = require("../server/sync-server.js");
 require("../core/note.js");
@@ -12,9 +18,10 @@ require("../adapters/chrome/cloud-sync-note-repo.js");
 
 const AIDN = globalThis.AIDN;
 
-test("sync-server: 未提供或错误的 Secret Token 返回 401", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-${Date.now()}.json`);
+test("sync-server: 未提供或错误的 Secret Token 返回 401", async (t) => {
+  const tmpFile = temporaryFile(t);
   const serverInstance = createSyncServer({
+    host: "127.0.0.1",
     secretToken: "my-custom-secret",
     storageFile: tmpFile,
   });
@@ -43,11 +50,12 @@ test("sync-server: 未提供或错误的 Secret Token 返回 401", async () => {
   }
 });
 
-test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与跨端拉取", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-${Date.now()}.json`);
+test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与跨端拉取", async (t) => {
+  const tmpFile = temporaryFile(t);
   const secretToken = "my-private-passphrase-999";
   const serverInstance = createSyncServer({
     secretToken,
+    host: "127.0.0.1",
     storageFile: tmpFile,
   });
   const port = await serverInstance.listen(0);
@@ -135,11 +143,12 @@ test("sync-server: 双端通过同一 Token 完整实现增量上传、合并与
   }
 });
 
-test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到云端并在手机端拉取", async () => {
-  const tmpFile = path.resolve(__dirname, `../data/test-sync-settings-${Date.now()}.json`);
+test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到云端并在手机端拉取", async (t) => {
+  const tmpFile = temporaryFile(t);
   const secretToken = "my-secret-settings-sync";
   const serverInstance = createSyncServer({
     secretToken,
+    host: "127.0.0.1",
     storageFile: tmpFile,
   });
   const port = await serverInstance.listen(0);
@@ -188,4 +197,76 @@ test("sync-server: 电脑端配置的 DeepSeek API Key 随同步自动推送到�
     await serverInstance.close();
     if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
   }
+});
+
+test("无默认凭据；坏文件拒绝启动而不覆盖", t => {
+  assert.throws(() => createSyncServer({ secretToken: "" }), /SYNC_SECRET_TOKEN/);
+  assert.throws(() => createSyncServer({ secretToken: "aidn-default-secret" }), /默认/);
+  const file = temporaryFile(t);
+  fs.writeFileSync(file, "broken");
+  assert.throws(() => createSyncServer({ secretToken: "test", storageFile: file }));
+  assert.equal(fs.readFileSync(file, "utf8"), "broken");
+  for (const raw of ["null", "17", "{}", '{"notes":[null]}']) {
+    fs.writeFileSync(file, raw);
+    assert.throws(() => createSyncServer({ secretToken: "test", storageFile: file }), /格式损坏/);
+    assert.equal(fs.readFileSync(file, "utf8"), raw);
+  }
+});
+
+test("落盘失败不确认、不修改内存或旧文件；重启恢复原库", async t => {
+  const file = temporaryFile(t); let fail = false;
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: file,
+    fs: { ...fs, renameSync: (...args) => { if (fail) throw new Error("disk full"); return fs.renameSync(...args); } } });
+  const port = await app.listen(0);
+  const send = body => fetch(`http://127.0.0.1:${port}/api/sync`, { method: "POST", headers: { Authorization: "Bearer test" }, body: JSON.stringify(body) });
+  try {
+    const note = AIDN.note.createNote({ id: "one", contentText: "first" });
+    assert.equal((await send({ deltas: [note] })).status, 200);
+    const before = fs.readFileSync(file, "utf8");
+    fail = true;
+    assert.equal((await send({ deltas: [{ ...note, contentText: "lost", updatedAt: new Date(Date.now() + 1).toISOString() }] })).status, 503);
+    assert.equal(app.getNotes()[0].contentText, "first");
+    assert.equal(fs.readFileSync(file, "utf8"), before);
+    for (const payload of [null, [], { settings: { deepseekApiKey: 123 } }, { deltas: [{ id: "bad" }] }]) assert.equal((await send(payload)).status, 400);
+  } finally { await app.close(); }
+  assert.equal(createSyncServer({ secretToken: "test", storageFile: file }).getNotes()[0].contentText, "first");
+});
+
+test("过大请求、畸形 Host 和非对象负载不破坏服务；空凭据启动无泄漏", async t => {
+  const { spawnSync } = require("node:child_process");
+  const startup = spawnSync(process.execPath, [path.join(__dirname, "../server/sync-server.js")], {
+    env: { ...process.env, SYNC_SECRET_TOKEN: "" }, encoding: "utf8",
+  });
+  assert.equal(startup.status, 1);
+  assert.doesNotMatch(startup.stdout + startup.stderr, /aidn-default-secret/);
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: temporaryFile(t), maxBodyBytes: 128 });
+  const port = await app.listen(0);
+  try {
+    const endpoint = `http://127.0.0.1:${port}`;
+    const large = await fetch(endpoint + "/api/sync", { method: "POST", headers: { Authorization: "Bearer test" }, body: "x".repeat(256) });
+    assert.equal(large.status, 413);
+    const health = await fetch(endpoint + "/health", { headers: { Host: "bad:host:value" } });
+    assert.equal(health.status, 200);
+    const invalid = await fetch(endpoint + "/api/sync", { method: "POST", headers: { Authorization: "Bearer test" }, body: "null" });
+    assert.equal(invalid.status, 400);
+    assert.equal((await fetch(endpoint + "/health")).status, 200);
+  } finally { await app.close(); }
+});
+
+test("同版本配置跨端收敛；清空后旧版本不能还原 Key", async t => {
+  const app = createSyncServer({ secretToken: "test", host: "127.0.0.1", storageFile: temporaryFile(t) });
+  const port = await app.listen(0);
+  const send = async settings => (await fetch(`http://127.0.0.1:${port}/api/sync`, { method: "POST", headers: { Authorization: "Bearer test" }, body: JSON.stringify({ settings, deltas: [] }) })).json();
+  try {
+    const a = { deepseekApiKey: "test-a", updatedAt: "2026-09-28T00:00:00Z" };
+    const b = { deepseekApiKey: "test-b", updatedAt: "2026-09-28T00:00:00.000Z" };
+    await send(a);
+    const res = await send(b);
+    assert.equal(res.settings.deepseekApiKey, "test-b");
+    assert.equal(AIDN.settings.mergeRemote(a, res.settings).deepseekApiKey, "test-b");
+    assert.equal((await send(a)).settings.deepseekApiKey, "test-b");
+    const clear = { deepseekApiKey: "", updatedAt: "2026-09-28T00:00:01Z" };
+    assert.equal((await send(clear)).settings.deepseekApiKey, "");
+    assert.equal((await send(b)).settings.deepseekApiKey, "");
+  } finally { await app.close(); }
 });

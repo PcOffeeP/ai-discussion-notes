@@ -59,21 +59,22 @@ function buildHarnessHtml() {
         lastError: null,
         onMessage: { addListener: (fn) => listeners.push(fn) },
         sendMessage(msg, cb) {
+          const respond = response => cb(JSON.parse(JSON.stringify(response)));
           setTimeout(() => {
-            if (msg.action === "notes.list") cb({ ok: true, data: [...store.values()] });
-            else if (msg.action === "notes.delete") { store.delete(msg.payload.id); cb({ ok: true, data: true }); }
+            if (msg.action === "notes.list") respond({ ok: true, data: [...store.values()] });
+            else if (msg.action === "notes.delete") { store.delete(msg.payload.id); respond({ ok: true, data: true }); }
             else if (msg.action === "notes.update") {
               const n = store.get(msg.payload.id);
               if (n) store.set(n.id, Object.assign({}, n, msg.payload.patch));
-              cb({ ok: true, data: n ? store.get(n.id) : null });
+              respond({ ok: true, data: n ? store.get(n.id) : null });
             }
-            else if (msg.action === "notes.clear") { store.clear(); cb({ ok: true, data: true }); }
-            else if (msg.action === "settings.get") cb({ ok: true, data: { captureButtonEnabled: true } });
-            else if (msg.action === "settings.patch") cb({ ok: true, data: msg.payload });
+            else if (msg.action === "notes.clear") { store.clear(); respond({ ok: true, data: true }); }
+            else if (msg.action === "settings.get") respond({ ok: true, data: { captureButtonEnabled: true } });
+            else if (msg.action === "settings.patch") respond({ ok: true, data: msg.payload });
             else if (msg.action === "recall.issue") {
               const notes = msg.payload.notes || [...store.values()];
               const targetNote = notes[0] || {};
-              cb({
+              respond({
                 ok: true,
                 data: {
                   issueId: "issue_harness_01",
@@ -98,7 +99,7 @@ function buildHarnessHtml() {
               });
             }
             else if (msg.action === "recall.profile") {
-              cb({
+              respond({
                 ok: true,
                 data: {
                   updatedAt: new Date().toISOString(),
@@ -108,10 +109,18 @@ function buildHarnessHtml() {
                 },
               });
             }
-            else if (msg.action === "sync.now") {
-              cb({ ok: true, data: { ok: true, syncedCount: 0, serverUpdatesCount: 0, offline: true } });
+            else if (msg.action === "notes.thoughts") {
+              const note = store.get(msg.payload.id);
+              if (note) {
+                const op = msg.payload.operation;
+                store.set(note.id, { ...note, thoughts: op.add ? [...(note.thoughts || []), op.add] : (note.thoughts || []).filter(t => t.id !== op.remove) });
+              }
+              respond({ ok: true, data: note ? store.get(note.id) : null });
             }
-            else cb({ ok: false, error: "unknown action" });
+            else if (msg.action === "sync.now") {
+              respond({ ok: true, data: { ok: true, syncedCount: 0, serverUpdatesCount: 0, offline: true } });
+            }
+            else respond({ ok: false, error: "unknown action" });
           }, 10);
         },
       },
@@ -125,12 +134,18 @@ function buildHarnessHtml() {
 function delay(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function boot() {
-  fs.writeFileSync(HARNESS_PATH, buildHarnessHtml());
-  const dom = await JSDOM.fromFile(HARNESS_PATH, {
+  const dom = new JSDOM(buildHarnessHtml(), {
+    url: HARNESS_URL,
     runScripts: "dangerously",
     resources: "usable",
     pretendToBeVisual: true,
     beforeParse(window) {
+      window.__documentClickListeners = 0;
+      const add = window.Document.prototype.addEventListener;
+      window.Document.prototype.addEventListener = function(type, ...args) {
+        if (type === "click") window.__documentClickListeners++;
+        return add.call(this, type, ...args);
+      };
       // jsdom 对 file:// 禁用 localStorage；scrollHeight 恒为 0 会跳过长笔记折叠
       const mem = new Map();
       Object.defineProperty(window, "localStorage", {
@@ -160,7 +175,18 @@ test("notes 页面 UI 冒烟", async (t) => {
   const dom = await boot();
   const { window } = dom;
   const { document } = window;
-  t.after(() => { window.close(); fs.rmSync(HARNESS_PATH, { force: true }); });
+  t.after(() => { window.close(); });
+
+  await t.test("反复刷新不增加文档点击监听器", async () => {
+    const before = window.__documentClickListeners;
+    const input = document.getElementById("search");
+    for (const value of ["xxx", "", "note", ""]) {
+      input.value = value;
+      input.dispatchEvent(new window.Event("input"));
+      await delay(200);
+    }
+    assert.equal(window.__documentClickListeners, before);
+  });
 
   const convItems = () => document.querySelectorAll("#side-conversations .side-item");
 

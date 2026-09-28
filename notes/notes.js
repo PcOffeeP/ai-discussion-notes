@@ -348,6 +348,15 @@
     return aside;
   }
 
+  document.addEventListener("click", (e) => {
+    for (const wrap of document.querySelectorAll(".note-menu-wrap")) {
+      if (!wrap.contains(e.target)) {
+        wrap.querySelector(".note-menu")?.classList.add("hidden");
+        wrap.querySelector("button")?.setAttribute("aria-expanded", "false");
+      }
+    }
+  });
+
   function buildCard(note) {
     const li = document.createElement("article");
     li.className = "note-card";
@@ -472,10 +481,7 @@
       moreBtn.setAttribute("aria-expanded", String(!open));
     });
     menu.addEventListener("click", (e) => e.stopPropagation());
-    // 点击卡片外任意处关闭菜单
-    document.addEventListener("click", (e) => {
-      if (!menuWrap.contains(e.target)) closeMenu();
-    });
+
 
     menuWrap.append(moreBtn, menu);
     actions.append(thoughtBtn, copyBtn, menuWrap);
@@ -607,7 +613,7 @@
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || msg.__aidn !== true || msg.action !== "notes.changed") return false;
       const kind = msg.payload && msg.payload.kind;
-      if (kind === "save" || kind === "clear") scheduleRefresh();
+      if (kind === "save" || kind === "clear" || kind === "sync") scheduleRefresh();
       return false;
     });
   }
@@ -730,28 +736,21 @@
         const model = deepseekModelInput?.value.trim() || "";
         await saveDeepSeekSettings();
 
-        const currentSettings = {
-          deepseekApiKey: key,
-          deepseekBaseUrl: baseUrl,
-          deepseekModel: model,
-          updatedAt: new Date().toISOString(),
-        };
 
         const res = await aidn.sync.syncNow({
           syncEndpoint: endpoint,
           userToken: token,
-          settings: currentSettings,
         });
 
         if (res && res.ok) {
           if (syncStatusMsg) {
             syncStatusMsg.textContent = res.offline
-              ? "已完成本地标记"
+              ? "离线，笔记仍待同步"
               : `同步成功 (推 ${res.syncedCount || 0} / 拉 +${res.serverUpdatesCount || 0})`;
           }
           const latestSettings = await aidn.advanced.settings?.get();
           if (latestSettings) {
-            if (deepseekKeyInput && latestSettings.deepseekApiKey) deepseekKeyInput.value = latestSettings.deepseekApiKey;
+            if (deepseekKeyInput) deepseekKeyInput.value = latestSettings.deepseekApiKey || "";
             if (deepseekUrlInput && latestSettings.deepseekBaseUrl) deepseekUrlInput.value = latestSettings.deepseekBaseUrl;
             if (deepseekModelInput && latestSettings.deepseekModel) deepseekModelInput.value = latestSettings.deepseekModel;
             syncDeepSeekStatus(latestSettings);

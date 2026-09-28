@@ -22,6 +22,7 @@
       save: (note) => call("notes.save", note),
       list: () => call("notes.list"),
       update: (id, patch) => call("notes.update", { id, patch }),
+      changeThoughts: (id, operation) => call("notes.thoughts", { id, operation }),
       delete: (id) => call("notes.delete", { id }),
       clear: () => call("notes.clear"),
       // 设置

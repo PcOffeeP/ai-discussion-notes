@@ -67,3 +67,43 @@ test("update：addThought/removeThought 的完整读写回路", async () => {
   notes = await client.all();
   assert.equal(notes[0].thoughts.length, 0);
 });
+
+test("并行保存与更新跨同一个 KV 的仓库实例保持完整", async () => {
+  const kv = AIDN.createMemoryKV();
+  const a = AIDN.createStorageNoteRepo(kv);
+  const b = AIDN.createStorageNoteRepo(kv);
+  await Promise.all(Array.from({ length: 30 }, (_, i) => (i % 2 ? a : b).save(AIDN.note.createNote({ id: `n${i}`, contentText: "原文" }))));
+  assert.equal((await a.list()).length, 30);
+  await Promise.all([a.update("n1", { conversationTitle: "标题" }), b.update("n1", { contentText: "修改" }), a.delete("n2")]);
+  const notes = await b.list();
+  assert.equal(notes.length, 29);
+  assert.equal(notes.find(n => n.id === "n1").conversationTitle, "标题");
+  assert.equal(notes.find(n => n.id === "n1").contentText, "修改");
+  notes[0].contentText = "不能泄露引用";
+  assert.notEqual((await b.list())[0].contentText, "不能泄露引用");
+});
+
+test("事务写失败不改变原库，队列恢复后可继续提交", async () => {
+  const memory = AIDN.createMemoryKV();
+  let fail = false;
+  const kv = { get: memory.get, set: async items => { if (fail) throw new Error("quota"); await memory.set(items); } };
+  const repo = AIDN.createStorageNoteRepo(kv);
+  await repo.save(AIDN.note.createNote({ id: "original" }));
+  fail = true;
+  await assert.rejects(repo.transact(() => ({ notes: [] })), /quota/);
+  assert.equal((await repo.list()).length, 1);
+  fail = false;
+  await repo.save(AIDN.note.createNote({ id: "next" }));
+  assert.equal((await repo.list()).length, 2);
+});
+
+test("并行追加批注的整个操作原子化；追加与删除不覆盖其他批注", async () => {
+  const repo = AIDN.createStorageNoteRepo(AIDN.createMemoryKV());
+  await repo.save(AIDN.note.createNote({ id: "thoughts" }));
+  const client = AIDN.createClient({ repo });
+  const added = await Promise.all([client.addThought("thoughts", "first"), client.addThought("thoughts", "second")]);
+  assert.deepEqual((await repo.list())[0].thoughts.map(t => t.text), ["first", "second"]);
+  await Promise.all([client.removeThought("thoughts", added[0].id), client.addThought("thoughts", "third")]);
+  assert.deepEqual((await repo.list())[0].thoughts.map(t => t.text), ["second", "third"]);
+  assert.equal(await client.addThought("missing", "lost"), null);
+});

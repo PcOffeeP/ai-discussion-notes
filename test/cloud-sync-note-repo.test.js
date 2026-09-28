@@ -32,19 +32,19 @@ test("cloudSyncNoteRepo: 保存与更新自动打上 dirty: true", async () => {
   assert.equal(updatedList[0].metadata.dirty, true);
 });
 
-test("cloudSyncNoteRepo: 离线同步将 dirty 增量清空并加上 syncedAt", async () => {
+test("cloudSyncNoteRepo: 离线同步不假装云端已确认", async () => {
   const { syncRepo } = makeRepos();
   const note = AIDN.note.createNote({ contentText: "离线测试" });
   await syncRepo.save(note);
 
   const res = await syncRepo.sync(); // 无 URL 为单机离线模式
   assert.equal(res.ok, true);
-  assert.equal(res.syncedCount, 1);
+  assert.equal(res.syncedCount, 0);
   assert.equal(res.offline, true);
 
   const list = await syncRepo.list();
-  assert.equal(list[0].metadata.dirty, false);
-  assert.ok(list[0].metadata.syncedAt);
+  assert.equal(list[0].metadata.dirty, true);
+  assert.ok(!list[0].metadata.syncedAt);
 });
 
 test("cloudSyncNoteRepo: 云端增量双向同步与 LWW 合并", async () => {
@@ -116,8 +116,8 @@ test("cloudSyncNoteRepo: 首次连接云端时全量推送已有笔记（即时�
   await syncRepo.sync(); // 离线同步
 
   const listAfterOffline = await localRepo.list();
-  assert.equal(listAfterOffline[0].metadata.dirty, false);
-  assert.ok(listAfterOffline[0].metadata.syncedAt);
+  assert.equal(listAfterOffline[0].metadata.dirty, true);
+  assert.ok(!listAfterOffline[0].metadata.syncedAt);
 
   // 添加一条示例笔记，检验示例笔记是否被排除
   const sampleNote = AIDN.note.createNote({ id: "note_sample_demo", contentText: "示例笔记" });
@@ -158,3 +158,22 @@ test("cloudSyncNoteRepo: 首次连接云端时全量推送已有笔记（即时�
   assert.equal(syncRes.settings.deepseekApiKey, "sk-synced-key");
 });
 
+
+test("应答期间更新保持 dirty，下一次发送新正文；失败不确认", async () => {
+  const { syncRepo } = makeRepos();
+  const n = AIDN.note.createNote({ id: "race", contentText: "before" });
+  await syncRepo.save(n);
+  let uploaded;
+  await syncRepo.sync({ syncEndpoint: "https://example.test", fetchOverride: async (_url, opts) => {
+    uploaded = JSON.parse(opts.body).deltas[0];
+    await syncRepo.update(n.id, { contentText: "after" });
+    return { ok: true, json: async () => ({ serverTime: new Date().toISOString(), notes: [uploaded] }) };
+  } });
+  assert.equal((await syncRepo.list())[0].contentText, "after");
+  assert.equal((await syncRepo.list())[0].metadata.dirty, true);
+  await assert.rejects(syncRepo.sync({ syncEndpoint: "https://example.test", fetchOverride: async (_url, opts) => {
+    assert.equal(JSON.parse(opts.body).deltas[0].contentText, "after");
+    return { ok: false, status: 503 };
+  } }), /503/);
+  assert.equal((await syncRepo.list())[0].metadata.dirty, true);
+});

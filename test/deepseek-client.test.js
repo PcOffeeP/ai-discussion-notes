@@ -147,3 +147,27 @@ test("deepseekClient: testConnection 校验有效性", async () => {
   }, /连接失败 \[HTTP 401\]/);
 });
 
+
+test("配置 Key 后断网、HTTP 错误、无效响应和超时都显示当前笔记离线提示", async () => {
+  const note = AIDN.note.createNote({ id: "plant", conversationTitle: "植物蒸腾", contentText: "气孔调节水分流失。温度影响蒸腾速率。", thoughts: [{ text: "观察叶片" }] });
+  for (const fetchFn of [async () => { throw new Error("offline"); }, async () => ({ ok: false, status: 401, text: async () => "private" }), async () => ({ ok: true, json: async () => ({ choices: [] }) }), () => new Promise(() => {})]) {
+    const client = AIDN.llm.createDeepSeekClient({ apiKey: "test", timeoutMs: 5, fetchFn });
+    const issue = await client.generateRecallIssue({ notes: [note], targetNoteId: note.id });
+    assert.equal(issue.generationMode, "offline");
+    assert.match(issue.q1.anchor, /气孔/);
+    assert.match(issue.q2.body, /温度/);
+    assert.match(issue.q3.body, /观察叶片/);
+    assert.doesNotMatch(JSON.stringify(issue), /DTO|Mapper|领域层|存储字段/);
+    assert.match(issue.q1.sub, /未经模型推理/);
+    assert.equal((await client.generateCognitiveProfile({ recentNotes: [note] })).generationMode, "offline");
+  }
+});
+
+test("模型响应体卡住也受整体超时控制", async () => {
+  const client = AIDN.llm.createDeepSeekClient({ apiKey: "test", timeoutMs: 5, fetchFn: async () => ({ ok: true, json: () => new Promise(() => {}) }) });
+  const params = { notes: [AIDN.note.createNote({ contentText: "原文" })] };
+  const issue = await client.generateRecallIssue(params);
+  assert.equal(issue.generationMode, "offline");
+  assert.equal((await client.generateCognitiveProfile({ recentNotes: params.notes })).generationMode, "offline");
+  await assert.rejects(client.testConnection(), /超时/);
+});
