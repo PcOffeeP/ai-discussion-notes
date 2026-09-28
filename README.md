@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/PcOffeeP/ai-discussion-notes/releases/latest">
-    <img src="https://img.shields.io/badge/Release-v0.4.5-blue.svg" alt="Latest Release" />
+    <img src="https://img.shields.io/badge/Release-v0.4.6-blue.svg" alt="Latest Release" />
   </a>
   <a href="https://github.com/PcOffeeP/ai-discussion-notes/actions/workflows/build-apk.yml">
     <img src="https://img.shields.io/badge/CI%20Build-Passing-brightgreen.svg" alt="CI Status" />
