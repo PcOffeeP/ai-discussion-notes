@@ -11,37 +11,36 @@
   <link rel="stylesheet" href="notes/notes.css" />
   <style>
     html, body {
-      height: 100%;
-      height: 100dvh;
+      min-height: 100%;
+      min-height: 100dvh;
       margin: 0;
       padding: 0;
       background-color: var(--newsprint-bg);
       background-image: var(--paper-grain);
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       -webkit-font-smoothing: antialiased;
     }
-    /* 移动端整版一体化外壳：100% 满屏设计 */
+    /* 移动端整版一体化外壳：自然视口滚动流，解除窒息压榨 */
     .mobile-shell {
-      height: 100%;
-      height: 100dvh;
+      min-height: 100vh;
+      min-height: 100dvh;
       max-width: 520px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       box-sizing: border-box;
-      background-color: var(--newsprint-white);
+      background-color: var(--newsprint-bg);
       background-image: var(--paper-grain);
       border-left: 1px solid var(--border-subtle);
       border-right: 1px solid var(--border-subtle);
-      padding: calc(6px + env(safe-area-inset-top, 0px)) 12px calc(6px + env(safe-area-inset-bottom, 0px));
-      overflow: hidden;
+      padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 0;
     }
 
     /* 1. 统一部署报头 (Unified Broadsheet Masthead - 防折行与纯铅印规整) */
     .recall-masthead-unified {
       flex-shrink: 0;
-      padding-bottom: 2px;
+      padding-bottom: 4px;
     }
     .masthead-meta-row {
       display: flex;
@@ -50,7 +49,7 @@
       font-family: var(--font-mono-meta);
       font-size: 11px;
       color: var(--ink-muted);
-      padding-bottom: 2px;
+      padding-bottom: 4px;
     }
     .masthead-badge {
       font-weight: 700;
@@ -60,21 +59,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 2px 0 3px;
-      gap: 6px;
+      margin: 4px 0 6px;
+      gap: 8px;
     }
     .masthead-title-wrap {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       flex-shrink: 0;
     }
     .masthead-title {
       font-family: var(--font-serif-masthead);
-      font-size: 19px;
+      font-size: 24px;
       font-weight: 900;
       margin: 0;
-      letter-spacing: -0.2px;
+      letter-spacing: -0.03em;
       color: var(--ink-black);
       line-height: 1.1;
       white-space: nowrap;
@@ -93,20 +92,20 @@
     .masthead-actions {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       flex-shrink: 0;
     }
     .deepseek-status {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
+      gap: 5px;
+      padding: 2px 7px;
       background: var(--newsprint-dim);
       border: 1px solid var(--border-subtle);
       border-radius: 0;
       font-family: var(--font-mono-meta);
-      font-size: 10.5px;
-      color: var(--ink-black);
+      font-size: 11px;
+      color: var(--ink-muted);
       cursor: pointer;
       height: 22px;
       white-space: nowrap;
@@ -115,12 +114,16 @@
     .deepseek-status .status-dot {
       width: 5px;
       height: 5px;
-      border-radius: 0;
+      border-radius: 50%;
       background: var(--ink-faint);
       display: inline-block;
     }
+    .deepseek-status.connected {
+      color: var(--ink-black);
+      border-color: var(--ink-muted);
+    }
     .deepseek-status.connected .status-dot {
-      background: var(--crimson-red);
+      background: var(--ink-black);
     }
     .masthead-settings-btn {
       border: 1px solid var(--border-subtle);
@@ -146,7 +149,7 @@
       height: 3px;
       border-top: 1.5px solid var(--ink-black);
       border-bottom: 0.5px solid var(--ink-black);
-      margin: 2px 0 4px;
+      margin: 4px 0 8px;
     }
 
     /* 2. 三大自测栏目中继区 (Recall Board - 纯粹单层滚动流，严整落格) */
@@ -155,10 +158,8 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      gap: 10px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 2px 0 10px;
+      gap: 16px;
+      padding: 8px 0 64px;
     }
     .recall-column {
       display: flex;
@@ -169,7 +170,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     .column-kicker {
       font-family: var(--font-mono-meta);
@@ -186,68 +187,62 @@
     }
     .column-title-lead {
       font-family: var(--font-serif-masthead);
-      font-size: 17.5px;
+      font-size: 22px;
       font-weight: 900;
-      line-height: 1.35;
-      margin: 0 0 3px;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin: 0 0 6px;
       color: var(--ink-black);
     }
     .column-sub-lead {
       font-size: 12px;
       font-style: italic;
       color: var(--ink-muted);
-      margin: 0 0 6px;
-      line-height: 1.4;
+      margin: 0 0 10px;
+      line-height: 1.5;
     }
     .column-actions {
       display: flex;
-      gap: 6px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     .column-title {
       font-family: var(--font-serif-masthead);
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       line-height: 1.35;
-      margin: 0 0 4px;
+      margin: 0 0 6px;
       color: var(--ink-black);
     }
-    .compact-btn {
-      border: 1px solid var(--ink-black);
+    .compact-btn,
+    .compact-reveal-btn {
+      border: 1px solid var(--border-subtle);
       background: var(--newsprint-white);
-      padding: 4px 9px;
+      padding: 5px 12px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       border-radius: 0;
-      font-family: var(--font-mono-meta);
-    }
-    .compact-btn:hover, .compact-btn:active {
-      background: var(--ink-black);
-      color: #fff;
-    }
-    .compact-reveal-btn {
-      align-self: flex-start;
-      background: transparent;
-      border: 1px solid var(--border-subtle);
-      font-family: var(--font-mono-meta);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
-      color: var(--ink-muted);
-      cursor: pointer;
-      border-radius: 0;
+      font-family: var(--font-serif-body);
+      color: var(--ink-black);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       transition: all 0.15s ease;
     }
-    .compact-reveal-btn:hover {
-      color: var(--ink-black);
+    .compact-btn:hover,
+    .compact-reveal-btn:hover,
+    .compact-btn:active,
+    .compact-reveal-btn:active {
+      background: var(--ink-black);
+      color: #fff;
       border-color: var(--ink-black);
-      background: var(--newsprint-dim);
     }
     .column-divider {
       position: relative;
       height: 1px;
       background: var(--border-subtle);
-      margin: 4px 0;
+      margin: 12px 0;
       flex-shrink: 0;
     }
     .column-divider::after {
@@ -256,9 +251,9 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      background: var(--newsprint-white);
+      background: var(--newsprint-bg);
       padding: 0 6px;
-      font-size: 8px;
+      font-size: 10px;
       color: var(--ink-faint);
     }
 
@@ -266,7 +261,7 @@
     .recall-clue-box {
       background: rgba(26, 25, 24, 0.035);
       border-left: 2.5px solid var(--ink-black);
-      padding: 8px 12px;
+      padding: 10px 12px;
       margin-top: 6px;
     }
     .clue-label {
@@ -278,52 +273,54 @@
       letter-spacing: 0.5px;
     }
     .clue-text {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--ink-black);
-      margin: 3px 0 0;
+      margin: 4px 0 0;
       line-height: 1.55;
     }
     .recall-original-box {
       background: rgba(26, 25, 24, 0.025);
       border: 1px solid var(--border-subtle);
-      padding: 10px 12px;
-      margin-top: 6px;
+      border-left: 2px solid var(--ink-black);
+      padding: 12px 14px;
+      margin-top: 8px;
     }
     .recall-original-content {
       font-family: var(--font-serif-body);
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.6;
       color: var(--ink-black);
       margin-bottom: 8px;
     }
     .recall-anchor-card {
-      background: #232220; /* 暖调深炭墨，非死黑 */
-      color: #f8f6f0;
-      border: 1px solid #363430;
+      background: var(--newsprint-dim);
+      color: var(--ink-black);
+      border: 1px solid var(--border-subtle);
       border-left: 3px solid var(--crimson-red);
-      padding: 9px 12px;
+      padding: 10px 14px;
       margin-bottom: 8px;
       border-radius: 0;
     }
     .anchor-label {
       font-family: var(--font-mono-meta);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 700;
-      color: #e28a7a;
+      color: var(--crimson-red);
       display: block;
       letter-spacing: 0.6px;
       text-transform: uppercase;
     }
     .anchor-text {
-      font-size: 13px;
+      font-size: 14px;
       font-family: var(--font-serif-body);
-      color: #f8f6f0;
-      margin: 3px 0 0;
-      line-height: 1.55;
+      color: var(--ink-black);
+      margin: 4px 0 0;
+      line-height: 1.6;
+      font-weight: 600;
     }
     .recall-thought-box {
       border-top: 1px solid var(--border-subtle);
-      padding-top: 6px;
+      padding-top: 8px;
     }
     .thought-label {
       font-family: var(--font-mono-meta);
@@ -339,7 +336,7 @@
     .thought-input-row input {
       flex: 1;
       font-size: 16px; /* 防止 iOS 视口聚焦放大 */
-      padding: 4px 8px;
+      padding: 6px 8px;
       border: 1px solid var(--border-subtle);
       background: var(--newsprint-white);
       border-radius: 0;
@@ -353,7 +350,7 @@
       outline: none;
     }
     .thought-input-row button {
-      padding: 4px 12px;
+      padding: 6px 14px;
       font-size: 12px;
       font-weight: 700;
       border-radius: 0;
@@ -376,10 +373,10 @@
     .recall-reveal-body {
       background: rgba(163, 29, 29, 0.035);
       border-left: 2.5px solid var(--crimson-red);
-      padding: 6px 10px;
-      margin-top: 4px;
-      font-size: 13px;
-      line-height: 1.5;
+      padding: 8px 12px;
+      margin-top: 6px;
+      font-size: 14px;
+      line-height: 1.55;
       color: var(--ink-black);
     }
     .recall-reveal-body p {
@@ -388,18 +385,24 @@
 
     /* 3. 底部通栏换版条 (Bottom Action Bar) - 剥离阴影与圆角，重现纯正直角铅印 */
     .recall-footer-unified {
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      background: var(--newsprint-bg);
+      border-top: 1px solid var(--border-subtle);
+      padding: 8px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+      margin-top: auto;
       flex-shrink: 0;
-      padding-top: 2px;
     }
     .recall-shuffle-btn {
       width: 100%;
-      padding: 9px 12px;
+      padding: 10px 14px;
       background: var(--crimson-red);
       color: #ffffff;
       border: 1px solid var(--crimson-red);
       outline: none;
       font-family: var(--font-serif-masthead);
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.8px;
       cursor: pointer;
@@ -408,6 +411,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.15s ease;
     }
     .recall-shuffle-btn:active {
       background: var(--crimson-hover);
@@ -418,7 +422,7 @@
       font-family: var(--font-mono-meta);
       font-size: 11px;
       color: var(--ink-faint);
-      margin: 3px 0 0;
+      margin: 4px 0 0;
       text-align: center;
     }
 
@@ -440,7 +444,7 @@
       border-top: 2px solid var(--ink-black);
       padding: 16px;
       z-index: 201;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 -4px 0 rgba(26,25,24,0.15);
       box-sizing: border-box;
       border-radius: 0;
     }
@@ -472,6 +476,44 @@
     .form-row input {
       font-size: 16px !important;
       border-radius: 0 !important;
+    }
+    .drawer-close-btn {
+      padding: 2px 8px;
+      font-size: 12px;
+    }
+    .drawer-status-msg {
+      font-family: var(--font-mono-meta);
+      font-size: 11px;
+      color: var(--crimson-red);
+    }
+    .drawer-hint {
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin: -4px 0 8px;
+      line-height: 1.4;
+    }
+    .drawer-note-count {
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin: 8px 0 0;
+    }
+    .drawer-version-row {
+      font-family: var(--font-mono-meta);
+      font-size: 11px;
+      color: var(--ink-faint);
+      margin-bottom: 8px;
+    }
+    .update-box {
+      margin-top: 10px;
+      padding: 10px;
+      background: var(--crimson-soft);
+      border: 1px solid var(--border-subtle);
+    }
+    .update-notes {
+      font-size: 12px;
+      margin: 0 0 8px;
+      line-height: 1.5;
+      white-space: pre-line;
     }
     button, input, select, textarea {
       border-radius: 0 !important;
@@ -594,7 +636,7 @@
   <aside id="mobile-drawer" class="drawer-content hidden">
     <div class="drawer-title">
       <span>报刊设置与笔记库</span>
-      <button id="close-drawer-btn" class="ghost-btn" style="padding: 2px 6px;">✕</button>
+      <button id="close-drawer-btn" class="ghost-btn drawer-close-btn">✕</button>
     </div>
 
     <section class="settings-section">
@@ -605,9 +647,9 @@
           <span>选择 JSON 档案导入</span>
           <input type="file" id="json-file-input" accept=".json" />
         </label>
-        <span id="import-status" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+        <span id="import-status" class="drawer-status-msg"></span>
       </div>
-      <p style="font-size: 11.5px; color: var(--ink-faint); margin: 8px 0 0;">
+      <p class="drawer-note-count">
         当前手机库内笔记：<strong id="stored-count">0</strong> 篇
       </p>
     </section>
@@ -619,7 +661,7 @@
         <span class="form-label">同步地址</span>
         <input type="url" id="m-sync-endpoint" placeholder="https://<你的服务名>.onrender.com" />
       </label>
-      <div style="font-size: 11px; color: var(--ink-faint); margin: -4px 0 8px; line-height: 1.4;">
+      <div class="drawer-hint">
         提示：Render 托管服务直接填入域名即可，已自动补全 <code>/api/sync</code> 路由。
       </div>
       <label class="form-row">
@@ -627,8 +669,8 @@
         <input type="password" id="m-sync-token" placeholder="你的专属 Secret Token" />
       </label>
       <div class="settings-actions">
-        <button id="m-sync-now-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">立即同步</button>
-        <span id="m-sync-status-msg" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+        <button id="m-sync-now-btn" class="ghost-btn">立即同步</button>
+        <span id="m-sync-status-msg" class="drawer-status-msg"></span>
       </div>
     </section>
 
@@ -644,24 +686,24 @@
         <input type="text" id="m-deepseek-url" placeholder="https://api.deepseek.com/v1" />
       </label>
       <div class="settings-actions">
-        <button id="m-save-key-btn" class="primary-btn" style="padding: 5px 12px; font-size: 12px;">保存配置</button>
-        <button id="m-reset-sample-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">重载预置示范笔记</button>
+        <button id="m-save-key-btn" class="primary-btn">保存配置</button>
+        <button id="m-reset-sample-btn" class="ghost-btn">重载预置示范笔记</button>
       </div>
     </section>
 
     <section class="settings-section">
       <h3>应用版本与在线升级</h3>
       <p class="section-desc">一键检查并下载最新安装包，随时保持最新功能。</p>
-      <div style="font-family: var(--font-mono-meta); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 8px;">
+      <div class="drawer-version-row">
         当前版本：<strong id="app-current-ver" style="color: var(--ink-black);">v0.4.0</strong>
       </div>
       <div class="settings-actions">
-        <button id="check-update-btn" class="ghost-btn" style="padding: 5px 12px; font-size: 12px;">检查新版本 ✦</button>
-        <span id="update-status-msg" style="font-family: var(--font-mono-meta); font-size: 11px; color: var(--crimson-red);"></span>
+        <button id="check-update-btn" class="ghost-btn">检查新版本 ✦</button>
+        <span id="update-status-msg" class="drawer-status-msg"></span>
       </div>
-      <div id="update-action-box" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(184,51,42,0.06); border: 1px solid var(--border-subtle);">
-        <p id="update-notes-text" style="font-size: 12px; margin: 0 0 8px; line-height: 1.5; white-space: pre-line;"></p>
-        <a id="download-apk-link" href="#" class="crimson-btn" style="display: inline-block; padding: 6px 14px; text-decoration: none; font-size: 12px;" target="_blank">手机立即下载新版 APK ↓</a>
+      <div id="update-action-box" class="hidden update-box">
+        <p id="update-notes-text" class="update-notes"></p>
+        <a id="download-apk-link" href="#" class="crimson-btn" target="_blank">手机立即下载新版 APK ↓</a>
       </div>
     </section>
   </aside>

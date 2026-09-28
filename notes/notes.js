@@ -479,12 +479,13 @@
 
     menuWrap.append(moreBtn, menu);
     actions.append(thoughtBtn, copyBtn, menuWrap);
+    meta.append(actions);
     main.appendChild(meta);
     if (stickyOpenIds.has(note.id)) {
       li.classList.add("sticky-open");
       thoughtBtn.setAttribute("aria-expanded", "true");
     }
-    li.append(actions, main, buildSticky(note, syncThoughtBtn));
+    li.append(main, buildSticky(note, syncThoughtBtn));
     return li;
   }
 

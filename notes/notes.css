@@ -23,8 +23,8 @@
   --border-subtle: #d8d2c2;        /* 内页纤细分隔线 */
 
   /* ---------- 字体族规范 ---------- */
-  --font-serif-masthead: "Noto Serif SC", "Songti SC", "STSong", "SimSun", "DM Serif Display", serif;
-  --font-serif-body: "Noto Serif SC", "Songti SC", "STSong", "SimSun", "Newsreader", Georgia, serif;
+  --font-serif-masthead: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", "FangSong", "DM Serif Display", serif;
+  --font-serif-body: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", "FangSong", "Newsreader", Georgia, serif;
   --font-mono-meta: "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
 
@@ -32,7 +32,7 @@
   --sidebar-w: 240px;
   --column-w: 860px;
   --gap-group: 32px;
-  --gap-card: 14px;
+  --gap-card: 16px;
   --card-collapsed-h: 280px;
 
   /* ---------- 想法便签 ---------- */
@@ -83,7 +83,7 @@ body {
   transform: translate(-50%, -50%);
   background: var(--newsprint-bg);
   padding: 0 8px;
-  font-size: 8px;
+  font-size: 10px;
   color: var(--ink-faint);
 }
 
@@ -93,12 +93,20 @@ body {
   top: 0;
   z-index: 100;
   display: flex;
+  justify-content: center;
+  padding: 0 28px;
+  background: var(--newsprint-bg);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.topbar-inner {
+  width: 100%;
+  max-width: 1160px;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 28px;
-  background: var(--newsprint-bg);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 0;
 }
 
 .topbar-left {
@@ -109,8 +117,9 @@ body {
 
 .brand {
   font-family: var(--font-serif-masthead);
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 700;
+  color: var(--ink-muted);
   margin: 0;
   letter-spacing: 0.5px;
 }
@@ -118,15 +127,15 @@ body {
   font-family: var(--font-mono-meta);
   font-size: 11px;
   font-weight: 400;
-  color: var(--ink-muted);
-  margin-left: 6px;
+  color: var(--ink-faint);
+  margin-left: 4px;
 }
 
 .deepseek-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
+  gap: 5px;
+  padding: 2px 7px;
   background: var(--newsprint-dim);
   border: 1px solid var(--border-subtle);
   border-radius: 0px;
@@ -139,19 +148,20 @@ body {
 }
 .deepseek-status:hover {
   border-color: var(--ink-black);
+  color: var(--ink-black);
   background: var(--newsprint-white);
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
   background: var(--ink-faint);
 }
 
-/* 状态色分级：未配置 / 已配置 / 异常 */
+/* 状态色分级：严格恪守单色水墨与印泥朱砂纪律，杜绝高饱和 SaaS 翠绿 */
 .deepseek-status.unconfigured {
   color: var(--ink-faint);
   border-color: var(--border-subtle);
@@ -161,17 +171,17 @@ body {
 }
 
 .deepseek-status.connected {
-  color: #1b8a5a;
-  border-color: #cde7d8;
-  background: #f0f8f3;
+  color: var(--ink-black);
+  border-color: var(--ink-muted);
+  background: var(--newsprint-dim);
 }
 .deepseek-status.connected .status-dot {
-  background: #1b8a5a;
+  background: var(--ink-black);
 }
 
 .deepseek-status.error {
   color: var(--crimson-red);
-  border-color: #f0caca;
+  border-color: var(--crimson-red);
   background: var(--crimson-soft);
 }
 .deepseek-status.error .status-dot {
@@ -191,7 +201,7 @@ body {
   border-radius: 0px;
   background: var(--newsprint-white);
   font-family: var(--font-serif-body);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-black);
   outline: none;
 }
@@ -211,11 +221,26 @@ button {
   border: 1px solid var(--border-subtle);
   background: var(--newsprint-white);
   color: var(--ink-black);
-  padding: 5px 12px;
-  font-size: 12.5px;
+  padding: 6px 12px;
+  font-size: 12px;
 }
 .ghost-btn:hover {
   background: var(--newsprint-dim);
+  border-color: var(--ink-black);
+}
+
+.recall-top-btn {
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--ink-black);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.recall-top-btn:hover {
+  background: var(--ink-black);
+  color: var(--newsprint-white);
   border-color: var(--ink-black);
 }
 
@@ -224,7 +249,7 @@ button {
   background: var(--ink-black);
   color: var(--newsprint-white);
   padding: 6px 16px;
-  font-size: 13px;
+  font-size: 14px;
   text-decoration: none;
   display: inline-block;
 }
@@ -236,24 +261,24 @@ button {
   border: 1px solid var(--crimson-red);
   background: var(--crimson-red);
   color: #fff;
-  padding: 5px 13px;
-  font-size: 12.5px;
+  padding: 6px 14px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 .crimson-btn:hover {
   background: var(--crimson-hover);
 }
 
 .danger-btn {
-  border: 1px solid #b91c1c;
-  background: #fff;
-  color: #b91c1c;
+  border: 1px solid var(--crimson-red);
+  background: var(--newsprint-white);
+  color: var(--crimson-red);
   padding: 6px 14px;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .danger-btn:hover {
-  background: #fef2f2;
+  background: var(--crimson-soft);
 }
 
 /* ---------- 页面主体双栏版芯 ---------- */
@@ -262,6 +287,8 @@ button {
   align-items: flex-start;
   padding: 24px 28px 80px;
   gap: 36px;
+  max-width: 1160px;
+  margin: 0 auto;
 }
 
 /* ---------- 边栏：专栏目次与认知雷达 ---------- */
@@ -299,7 +326,7 @@ button {
   background: none;
   color: var(--ink-black);
   font-family: var(--font-serif-body);
-  font-size: 13.5px;
+  font-size: 14px;
   text-align: left;
   cursor: pointer;
   border-left: 2px solid transparent;
@@ -346,7 +373,8 @@ button {
   background: var(--newsprint-dim);
   border: 1px solid var(--border-subtle);
   color: var(--ink-muted);
-  font-size: 9px;
+  font-family: var(--font-mono-meta);
+  font-size: 11px;
   line-height: 14px;
   padding: 0 2px;
 }
@@ -363,12 +391,15 @@ button {
 }
 .side-more:hover { color: var(--crimson-red); text-decoration: underline; }
 
-/* ---------- DEEPSEEK 认知雷达 (Sidebar) ---------- */
+/* ---------- 边栏：洞见要目 / 认知雷达 ---------- */
 .radar-box {
   margin-top: 24px;
-  padding: 12px;
-  background: var(--newsprint-dim);
-  border: 1px solid var(--border-subtle);
+  padding: 14px 2px 0;
+  background: transparent;
+  border-top: 1.5px solid var(--oxford-line);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
 .radar-head {
   margin: 0 0 10px;
@@ -385,6 +416,7 @@ button {
   color: var(--ink-muted);
   padding: 0 4px;
   line-height: 1;
+  cursor: pointer;
 }
 .radar-refresh:hover { color: var(--crimson-red); }
 
@@ -396,22 +428,23 @@ button {
 }
 .radar-tag {
   font-family: var(--font-serif-body);
-  font-size: 11.5px;
+  font-size: 11px;
   padding: 1px 6px;
-  background: var(--newsprint-white);
+  background: transparent;
   border: 1px solid var(--border-subtle);
   color: var(--ink-black);
+  border-radius: 0;
 }
 .radar-shift {
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--ink-muted);
   font-style: italic;
   margin: 6px 0;
 }
 .radar-meta {
   font-family: var(--font-mono-meta);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
   margin-top: 6px;
 }
@@ -457,9 +490,9 @@ button {
 }
 .masthead-title {
   font-family: var(--font-serif-masthead);
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 900;
-  letter-spacing: 3px;
+  letter-spacing: -0.02em;
   margin: 0;
   color: var(--ink-black);
 }
@@ -477,7 +510,7 @@ button {
 
 .masthead-motto {
   font-family: var(--font-serif-body);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--ink-muted);
   margin: 4px 0 8px;
   font-style: italic;
@@ -498,7 +531,7 @@ button {
 }
 .empty-badge {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--crimson-red);
   border: 1px solid var(--crimson-red);
   padding: 2px 6px;
@@ -512,7 +545,7 @@ button {
 }
 .empty p {
   color: var(--ink-muted);
-  font-size: 13.5px;
+  font-size: 14px;
   margin: 0 0 20px;
 }
 .empty-actions {
@@ -529,7 +562,7 @@ button {
   margin: 0 0 16px;
   padding: 4px 8px;
   background: var(--crimson-soft);
-  border: 1px solid #f0caca;
+  border: 1px solid rgba(163, 29, 29, 0.2);
   display: inline-block;
 }
 .no-results {
@@ -567,11 +600,11 @@ button {
 .group.collapsed .group-caret { transform: rotate(-90deg); }
 .group-icon { width: 14px; height: 14px; align-self: center; }
 .group-icon img { width: 14px; height: 14px; }
-.group-icon.side-icon-letter { font-size: 9px; }
+.group-icon.side-icon-letter { font-family: var(--font-mono-meta); font-size: 11px; }
 
 .group-title {
   font-family: var(--font-serif-masthead);
-  font-size: 16.5px;
+  font-size: 18px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -589,7 +622,7 @@ button {
   border: 1px solid transparent;
   background: none;
   color: var(--ink-muted);
-  font-size: 11.5px;
+  font-size: 11px;
   cursor: pointer;
   opacity: 0;
   flex-shrink: 0;
@@ -600,28 +633,30 @@ button {
 .group-body { padding: 12px 0 0; }
 .group.collapsed .group-body { display: none; }
 
-/* ---------- 笔记大报卡片 (Note Card) ---------- */
+/* ---------- 笔记大报纪事条目 (Broadsheet Note Article) ---------- */
 .note-card {
   position: relative;
   display: flex;
-  gap: 18px;
+  gap: 20px;
   align-items: flex-start;
-  background: var(--newsprint-white);
-  border: 1px solid var(--border-subtle);
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle);
   border-radius: 0px;
-  padding: 20px 22px 16px;
+  padding: 24px 0 20px;
+  transition: border-color 0.15s ease;
 }
-.note-card + .note-card { margin-top: var(--gap-card); }
-.note-card:hover { border-color: var(--ink-muted); }
+.note-card:first-child { padding-top: 8px; }
+.note-card + .note-card { margin-top: 0; }
+.note-card:hover { border-bottom-color: var(--ink-black); }
 
-.note-main { flex: 1; min-width: 0; }
+.note-main { flex: 1; min-width: 0; max-width: 720px; }
 
 /* 正常优雅的 Markdown 正文排版 (无任何首字放大/大写干扰) */
 .note-content {
   margin: 0 0 14px;
   font-family: var(--font-serif-body);
   font-size: 14px;
-  line-height: 1.75;
+  line-height: 1.6;
   color: var(--ink-black);
   word-break: break-word;
 }
@@ -643,10 +678,10 @@ button {
   line-height: 1.35;
   margin: 16px 0 8px;
 }
-.note-md h1 { font-size: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px; }
-.note-md h2 { font-size: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 3px; }
-.note-md h3 { font-size: 14.5px; }
-.note-md h4 { font-size: 13.5px; }
+.note-md h1 { font-size: 22px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px; }
+.note-md h2 { font-size: 18px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 3px; }
+.note-md h3 { font-size: 16px; }
+.note-md h4 { font-size: 14px; }
 
 .note-md ul,
 .note-md ol {
@@ -701,7 +736,7 @@ button {
   width: 100%;
   border-collapse: collapse;
   margin: 12px 0;
-  font-size: 12.5px;
+  font-size: 12px;
   border-top: 1px solid var(--oxford-line);
   border-bottom: 2px solid var(--oxford-line);
 }
@@ -738,7 +773,7 @@ button {
 
 .note-raw {
   font-family: var(--font-mono-meta);
-  font-size: 12.5px;
+  font-size: 12px;
   white-space: pre-wrap;
   background: var(--newsprint-dim);
   padding: 12px;
@@ -756,7 +791,7 @@ button {
   border: 1px solid var(--border-subtle);
   background: var(--newsprint-dim);
   color: var(--ink-muted);
-  font-size: 11.5px;
+  font-size: 11px;
   cursor: pointer;
   padding: 2px 8px;
   margin-top: 4px;
@@ -769,45 +804,47 @@ button {
   font-size: 11px;
   color: var(--ink-muted);
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px solid #f0eee6;
+  margin-top: 12px;
 }
 .note-meta time { cursor: default; }
 
 .note-actions {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  display: none;
-  gap: 5px;
+  position: static;
+  display: flex;
+  gap: 6px;
   align-items: center;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
 }
-.note-card.sticky-open .note-actions { right: calc(var(--sticky-w) + 40px); }
-.note-card.has-thoughts .note-actions { display: flex; }
-.note-card.has-thoughts .note-actions :is(.note-copy, .note-menu-wrap) { display: none; }
-.note-card.has-thoughts:hover .note-actions :is(.note-copy, .note-menu-wrap),
-.note-actions:focus-within :is(.note-copy, .note-menu-wrap) { display: block; }
 .note-card:hover .note-actions,
-.note-actions:focus-within { display: flex; }
+.note-actions:focus-within,
+.note-card.has-thoughts .note-actions {
+  opacity: 1;
+}
 
 .note-actions button {
   border: 1px solid var(--border-subtle);
-  background: var(--newsprint-white);
-  padding: 3px 8px;
-  font-size: 12px;
+  background: var(--newsprint-bg);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--font-serif-body);
   color: var(--ink-muted);
 }
 .note-actions button:hover {
   color: var(--ink-black);
   border-color: var(--ink-black);
+  background: var(--newsprint-dim);
 }
 .note-thought-btn[aria-expanded="true"] {
   color: var(--crimson-red);
   background: var(--crimson-soft);
   border-color: var(--crimson-red);
+  opacity: 1;
 }
 
 .note-menu-wrap { position: relative; }
@@ -820,7 +857,7 @@ button {
   flex-direction: column;
   background: var(--newsprint-white);
   border: 1px solid var(--ink-black);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  box-shadow: 2px 2px 0 rgba(26,25,24,0.15);
   min-width: 90px;
 }
 .note-menu button {
@@ -831,8 +868,8 @@ button {
   text-align: left;
 }
 .note-menu button:hover { background: var(--newsprint-dim); }
-.note-menu button.danger { color: #b91c1c; }
-.note-menu button.danger:hover { background: #fef2f2; }
+.note-menu button.danger { color: var(--crimson-red); }
+.note-menu button.danger:hover { background: var(--crimson-soft); }
 
 /* ---------- 想法便利贴 (Thought Sticky) ---------- */
 .note-sticky {
@@ -870,7 +907,7 @@ button {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono-meta);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
   margin-top: 4px;
 }
@@ -881,7 +918,7 @@ button {
   padding: 0 3px;
   font-size: 12px;
 }
-.note-thought-del:hover { color: #b91c1c; }
+.note-thought-del:hover { color: var(--crimson-red); }
 
 .note-thought-input {
   width: 100%;
@@ -896,7 +933,7 @@ button {
 .note-thought-input:focus { border-color: var(--sticky-head); }
 .note-sticky-hint {
   font-family: var(--font-mono-meta);
-  font-size: 9.5px;
+  font-size: 11px;
   color: var(--ink-faint);
   margin-top: 4px;
   text-align: right;
@@ -920,7 +957,7 @@ button {
   z-index: 201;
   padding: 24px;
   overflow-y: auto;
-  box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+  box-shadow: -4px 0 0 rgba(26,25,24,0.12);
 }
 .settings-head {
   display: flex;
@@ -975,7 +1012,7 @@ button {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 .settings-actions {
@@ -995,7 +1032,6 @@ button {
   position: fixed;
   inset: 0;
   background: rgba(26, 25, 24, 0.65);
-  backdrop-filter: blur(2px);
   z-index: 300;
 }
 .recall-modal {
@@ -1008,7 +1044,7 @@ button {
   max-width: 680px;
   background: var(--newsprint-bg);
   border: 2px solid var(--ink-black);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  box-shadow: 6px 6px 0 rgba(26, 25, 24, 0.25);
   z-index: 301;
   display: flex;
   flex-direction: column;
@@ -1079,7 +1115,7 @@ button {
 }
 .recall-kicker {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   text-transform: uppercase;
   color: var(--crimson-red);
   font-weight: 700;
@@ -1087,25 +1123,26 @@ button {
 }
 .recall-source {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--ink-muted);
 }
 .recall-headline {
   font-family: var(--font-serif-masthead);
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 900;
-  line-height: 1.4;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
   margin: 0 0 6px;
 }
 .recall-sub {
-  font-size: 13px;
+  font-size: 14px;
   font-style: italic;
   color: var(--ink-muted);
   margin: 0 0 12px;
 }
 .recall-sub-headline {
   font-family: var(--font-serif-masthead);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0 0 8px;
 }
@@ -1116,15 +1153,25 @@ button {
   margin-bottom: 12px;
 }
 .recall-btn {
-  border: 1px solid var(--ink-black);
+  border: 1px solid var(--border-subtle);
   background: var(--newsprint-white);
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 600;
+  font-family: var(--font-serif-body);
+  color: var(--ink-black);
+  cursor: pointer;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
 }
-.recall-btn:hover {
+.recall-btn:hover,
+.recall-btn:active {
   background: var(--ink-black);
   color: #fff;
+  border-color: var(--ink-black);
 }
 
 .recall-clue-box {
@@ -1135,13 +1182,13 @@ button {
 }
 .clue-label {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink-muted);
   display: block;
 }
 .clue-text {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-black);
   margin: 4px 0 0;
 }
@@ -1157,8 +1204,8 @@ button {
 }
 .recall-original-content {
   font-family: var(--font-serif-body);
-  font-size: 13.5px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--ink-black);
   margin-bottom: 14px;
 }
@@ -1167,28 +1214,29 @@ button {
 }
 
 .recall-anchor-card {
-  background: #232220; /* 暖调深炭墨，非死黑 */
-  color: #f8f6f0;
-  border: 1px solid #363430;
+  background: var(--newsprint-dim);
+  color: var(--ink-black);
+  border: 1px solid var(--border-subtle);
   border-left: 3px solid var(--crimson-red);
   padding: 10px 14px;
   margin-bottom: 14px;
 }
 .anchor-label {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  color: #e28a7a;
+  color: var(--crimson-red);
   display: block;
   letter-spacing: 0.6px;
   text-transform: uppercase;
 }
 .anchor-text {
   font-family: var(--font-serif-body);
-  font-size: 13px;
-  color: #f8f6f0;
+  font-size: 14px;
+  color: var(--ink-black);
   margin: 4px 0 0;
-  line-height: 1.55;
+  line-height: 1.6;
+  font-weight: 600;
 }
 
 .recall-thought-box {
@@ -1212,12 +1260,12 @@ button {
   border: 1px solid var(--border-subtle);
   background: #fff;
   font-family: var(--font-serif-body);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 #recall-thought-input:focus { border-color: var(--ink-black); }
 .recall-thought-hint {
   font-family: var(--font-mono-meta);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--crimson-red);
   margin-top: 4px;
   display: block;
@@ -1226,19 +1274,29 @@ button {
 .recall-reveal-btn {
   border: 1px solid var(--border-subtle);
   background: var(--newsprint-white);
-  padding: 4px 10px;
+  padding: 5px 12px;
   font-size: 12px;
-  color: var(--ink-muted);
+  font-weight: 600;
+  font-family: var(--font-serif-body);
+  color: var(--ink-black);
+  cursor: pointer;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
 }
-.recall-reveal-btn:hover {
-  color: var(--crimson-red);
-  border-color: var(--crimson-red);
+.recall-reveal-btn:hover,
+.recall-reveal-btn:active {
+  background: var(--ink-black);
+  color: #fff;
+  border-color: var(--ink-black);
 }
 .recall-reveal-body {
   background: var(--newsprint-dim);
   padding: 10px 14px;
   margin-top: 8px;
-  font-size: 13px;
+  font-size: 14px;
   border-left: 2px solid var(--border-subtle);
 }
 .recall-reveal-body p { margin: 0; }
@@ -1254,7 +1312,7 @@ button {
   color: #fff;
   border: 1px solid var(--crimson-red);
   font-family: var(--font-serif-masthead);
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 1px;
   margin-bottom: 8px;
@@ -1277,7 +1335,7 @@ button {
     padding-bottom: 16px;
   }
   .main { width: 100%; }
-  .masthead-title { font-size: 26px; }
+  .masthead-title { font-size: 28px; }
   .recall-modal {
     top: 10px;
     bottom: 10px;
