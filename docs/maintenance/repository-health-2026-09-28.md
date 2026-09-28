@@ -88,3 +88,9 @@
 ### 6. 导入与网关形状一致性
 
 导入校验补充 sourceType 与日期的字符串类型，拒绝会被网关拒收的记录，避免“本机导入成功、整批同步失败”。3 项导入测试通过；重新构建并核对移动资产通过。这一小范围收紧发生在 reviewer 指定候选之后，未声称包含在其复审结论中。
+
+## v0.4.7 发布时发现的原生兼容问题
+
+首次远端构建 [36451550036](https://github.com/PcOffeeP/ai-discussion-notes/actions/runs/36451550036) 已通过 JS 测试、版本和同步资产检查，但在 `compileDebugUnitTestJavaWithJavac` 失败，Release 步骤被跳过，没有产生该版本的正式发布。
+
+原因是新增原生契约测试使用 `Files.readString(Path)`，当前 Android 编译 API 不提供该方法。改为 `Files.readAllBytes` 加显式 UTF-8 解码，保留相同的应用身份断言和原生测试门槛。没有跳过测试或削弱断言。该问题本机因缺少原生环境未能提前发现；后续远端原生构建结果仍以流水线为准。
